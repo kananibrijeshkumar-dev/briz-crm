@@ -88,9 +88,10 @@ export default function App() {
     loadSupabaseData();
   }, []);
 
-  // Filter Leads (Filtered by Active Client Workspace)
+  // Filter Leads (Strict Client Workspace Separation)
   const filteredLeads = leads.filter(lead => {
-    const matchCompany = !lead.company || lead.company === activeClient;
+    const leadComp = lead.company || "Jay Shree Ambe Food Machinery";
+    const matchCompany = leadComp === activeClient;
     const matchRep = (selectedRep === "All Representatives (Admin View)") || (lead.assigned_rep === selectedRep);
     const matchStage = stageFilter === "all" || lead.stage === stageFilter;
     const matchSearch = 
@@ -731,7 +732,7 @@ export default function App() {
             <div className="view-header">
               <div>
                 <h1 className="view-title">Master Leads Database (Data List)</h1>
-                <p className="view-subtitle">Complete registry of all WhatsApp customer inquiries with multi-filter & export</p>
+                <p className="view-subtitle">Showing active inquiries for <strong>{activeClient}</strong> ({filteredLeads.length} leads). Switch workspace in the top bar to toggle between Jay Shree Ambe and MNP Holidays.</p>
               </div>
               <div className="view-actions">
                 <button className="btn-secondary" onClick={exportToCSV}>
@@ -769,8 +770,8 @@ export default function App() {
                   onChange={(e) => setSelectedRep(e.target.value)}
                   className="filter-select"
                 >
-                  <option value="All Representatives (Admin View)">All 9 Sales Reps</option>
-                  {SALES_REPS.map(r => (
+                  <option value="All Representatives (Admin View)">All Sales Desks</option>
+                  {SALES_REPS.filter(r => (r.company || "Jay Shree Ambe Food Machinery") === activeClient).map(r => (
                     <option key={r.id} value={r.name}>{r.name}</option>
                   ))}
                 </select>
@@ -788,7 +789,7 @@ export default function App() {
                     <th>Customer Name</th>
                     <th>Phone / WhatsApp</th>
                     <th>Location</th>
-                    <th>Machine Requirement</th>
+                    <th>{activeClient === "MNP Holidays" ? "Tour Package / Destination" : "Machine Requirement"}</th>
                     <th>Deal Value</th>
                     <th>Current Stage</th>
                     <th>Assigned Rep</th>
