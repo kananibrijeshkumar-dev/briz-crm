@@ -41,6 +41,15 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showOnboardModal, setShowOnboardModal] = useState(false);
+  const [showAddRepModal, setShowAddRepModal] = useState(false);
+  const [repsList, setRepsList] = useState(SALES_REPS);
+  const [newRepForm, setNewRepForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    role: "sales_rep",
+    company: activeClient
+  });
   const [quoteLead, setQuoteLead] = useState(null);
 
   // Quotation Builder State
@@ -1121,18 +1130,26 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 5: SALES TEAM MANAGEMENT */}
+        {/* TAB 5: SALES TEAM MANAGEMENT (ADMIN & REPS) */}
         {activeTab === "team" && (
           <div className="content-container fade-in">
             <div className="view-header">
               <div>
-                <h1 className="view-title">Sales Representatives Performance</h1>
-                <p className="view-subtitle">Monitor assigned leads, response rate, and closed revenue for all 9 sales reps</p>
+                <h1 className="view-title">Sales Team & Access Management</h1>
+                <p className="view-subtitle">Manage login IDs, assign leads, and monitor performance for {activeClient}</p>
+              </div>
+              <div className="view-actions">
+                <button className="btn-primary" onClick={() => {
+                  setNewRepForm({ ...newRepForm, company: activeClient });
+                  setShowAddRepModal(true);
+                }}>
+                  <Plus size={15} /> + Add Sales Representative
+                </button>
               </div>
             </div>
 
             <div className="team-cards-grid">
-              {SALES_REPS.map((rep) => (
+              {repsList.filter(r => (r.company || "Jay Shree Ambe Food Machinery") === activeClient).map((rep) => (
                 <div key={rep.id} className="team-rep-card">
                   <div className="rep-card-top">
                     <div className="rep-big-avatar">{rep.name.charAt(0)}</div>
@@ -1158,15 +1175,31 @@ export default function App() {
                   </div>
 
                   <div className="rep-card-footer">
+                    <div className="rep-access-credentials">
+                      <span className="cred-lbl">Login ID:</span>
+                      <strong className="cred-val">{rep.phone}</strong>
+                      <span className="badge-active-rep">Active Account</span>
+                    </div>
                     <span className="speed-tag">⚡ Response Rate: {rep.rate}</span>
-                    <a 
-                      href={`https://wa.me/${rep.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("નમસ્તે " + rep.name + ", BrizCRM તરફથી આપના આજના નવા લીડ્સ ચેક કરો.")}`} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="dispatch-wa-btn"
-                    >
-                      <MessageSquare size={14} /> Send Leads on WhatsApp
-                    </a>
+                    <div className="rep-footer-buttons">
+                      <a 
+                        href={`https://wa.me/${rep.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("નમસ્તે " + rep.name + ", BrizCRM માં આપનું એકાઉન્ટ એક્ટિવ છે. Login: https://crm.brizpatel.online/login (Mobile: " + rep.phone + ")")}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="btn-invite-wa"
+                        title="Send login link to sales rep on WhatsApp"
+                      >
+                        <Send size={13} /> Send Login Details
+                      </a>
+                      <a 
+                        href={`https://wa.me/${rep.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("નમસ્તે " + rep.name + ", BrizCRM તરફથી આપના આજના નવા લીડ્સ ચેક કરો.")}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="dispatch-wa-btn"
+                      >
+                        <MessageSquare size={13} /> Leads
+                      </a>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1574,6 +1607,89 @@ export default function App() {
                 <Send size={15} /> Open WhatsApp Chat
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CREATE SALES REP ACCOUNT */}
+      {showAddRepModal && (
+        <div className="modal-backdrop" onClick={() => setShowAddRepModal(false)}>
+          <div className="modal-dialog fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Create Sales Representative Account</h3>
+              <button className="modal-close" onClick={() => setShowAddRepModal(false)}><X size={18} /></button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!newRepForm.name || !newRepForm.phone) return;
+              const newRep = {
+                id: Date.now(),
+                name: newRepForm.name,
+                phone: newRepForm.phone,
+                company: activeClient,
+                leads: 0,
+                won: 0,
+                revenue: "₹0",
+                rate: "100%"
+              };
+              setRepsList([...repsList, newRep]);
+              setShowAddRepModal(false);
+              const waInvite = `https://wa.me/${newRepForm.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Welcome to BrizCRM! Your sales account is created for " + activeClient + ". Login: https://crm.brizpatel.online/login with your phone: " + newRepForm.phone)}`;
+              window.open(waInvite, "_blank");
+            }} className="modal-form">
+              <div className="form-group">
+                <label>Representative Full Name *</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Nileshbhai Patel"
+                  value={newRepForm.name}
+                  onChange={(e) => setNewRepForm({ ...newRepForm, name: e.target.value })}
+                  required
+                  className="crm-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>WhatsApp Mobile (Used as Login ID) *</label>
+                <input 
+                  type="text" 
+                  placeholder="+91..."
+                  value={newRepForm.phone}
+                  onChange={(e) => setNewRepForm({ ...newRepForm, phone: e.target.value })}
+                  required
+                  className="crm-input"
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Assign to Business Workspace</label>
+                  <select 
+                    value={activeClient}
+                    disabled
+                    className="crm-select"
+                  >
+                    <option value={activeClient}>{activeClient}</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Access Role</label>
+                  <select 
+                    value={newRepForm.role}
+                    onChange={(e) => setNewRepForm({ ...newRepForm, role: e.target.value })}
+                    className="crm-select"
+                  >
+                    <option value="sales_rep">Sales Representative</option>
+                    <option value="sales_admin">Sales Manager / Admin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowAddRepModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary">Create Account & Send WhatsApp Invite</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
