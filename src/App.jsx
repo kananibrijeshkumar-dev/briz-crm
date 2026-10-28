@@ -88,8 +88,9 @@ export default function App() {
     loadSupabaseData();
   }, []);
 
-  // Filter Leads
+  // Filter Leads (Filtered by Active Client Workspace)
   const filteredLeads = leads.filter(lead => {
+    const matchCompany = !lead.company || lead.company === activeClient;
     const matchRep = (selectedRep === "All Representatives (Admin View)") || (lead.assigned_rep === selectedRep);
     const matchStage = stageFilter === "all" || lead.stage === stageFilter;
     const matchSearch = 
@@ -97,7 +98,7 @@ export default function App() {
       lead.phone.includes(searchTerm) ||
       (lead.city && lead.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (lead.requirement && lead.requirement.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchRep && matchStage && matchSearch;
+    return matchCompany && matchRep && matchStage && matchSearch;
   });
 
   // Financial Metrics
