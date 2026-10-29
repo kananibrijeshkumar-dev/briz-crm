@@ -61,7 +61,7 @@ export default function App() {
   const [quoteCustomer, setQuoteCustomer] = useState("");
   const [quotePhone, setQuotePhone] = useState("");
   const [customPrice, setCustomPrice] = useState(MACHINE_PRESETS[4].basePrice);
-  const [quoteLanguage, setQuoteLanguage] = useState("gujarati");
+  const [quoteLanguage, setQuoteLanguage] = useState("hindi");
   const [copiedNotification, setCopiedNotification] = useState(false);
 
   // New Lead Form State
@@ -1148,17 +1148,24 @@ export default function App() {
                   <div className="radio-group-row">
                     <button 
                       type="button" 
-                      className={`lang-chip ${quoteLanguage === "gujarati" ? "active" : ""}`}
-                      onClick={() => setQuoteLanguage("gujarati")}
+                      className={`lang-chip ${quoteLanguage === "hindi" ? "active" : ""}`}
+                      onClick={() => setQuoteLanguage("hindi")}
                     >
-                      ગુજરાતી (Gujarati)
+                      🇮🇳 हिंदी (Hindi - Primary)
                     </button>
                     <button 
                       type="button" 
                       className={`lang-chip ${quoteLanguage === "english" ? "active" : ""}`}
                       onClick={() => setQuoteLanguage("english")}
                     >
-                      English / Hinglish
+                      🇬🇧 English
+                    </button>
+                    <button 
+                      type="button" 
+                      className={`lang-chip ${quoteLanguage === "gujarati" ? "active" : ""}`}
+                      onClick={() => setQuoteLanguage("gujarati")}
+                    >
+                      ગુજરાતી (Gujarati)
                     </button>
                   </div>
                 </div>
