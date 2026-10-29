@@ -33,7 +33,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window !== "undefined" && window.location.search.includes("mode=app")) return "app";
     if (typeof window !== "undefined" && window.location.search.includes("mode=landing")) return "landing";
-    return (typeof window !== "undefined" && localStorage.getItem("briz_crm_view_mode")) || "landing";
+    return "landing";
   });
 
   const switchViewMode = (mode) => {
@@ -469,6 +469,18 @@ export default function App() {
   // -------------------------------------------------------------
   // LOGIN SCREEN
   // -------------------------------------------------------------
+  if (viewMode === "landing") {
+    return (
+      <LandingPage 
+        onEnterWorkstation={() => switchViewMode("app")}
+        onOpenLogin={() => {
+          switchViewMode("app");
+          setIsAuthenticated(false);
+        }}
+      />
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="login-wrapper">
