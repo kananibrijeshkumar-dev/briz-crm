@@ -5,7 +5,8 @@ import {
   CheckCircle, LayoutGrid, List, Sparkles, Building2, X, ExternalLink,
   LogIn, LogOut, Shield, ShieldCheck, Download, Eye, Send, Settings,
   ArrowUpRight, Check, AlertCircle, RefreshCw, BarChart3, Briefcase,
-  DollarSign, UserCheck, ChevronDown, Bell, Copy, Printer
+  DollarSign, UserCheck, ChevronDown, Bell, Copy, Printer,
+  Trash2, Calendar, AlertTriangle
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { supabase } from "./supabase";
@@ -40,6 +41,17 @@ export default function App() {
   const [activeLeadDrawer, setActiveLeadDrawer] = useState(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notesEdit, setNotesEdit] = useState("");
+
+  // Follow-Up Reminders & Date Range Filter State
+  const [dateFilter, setDateFilter] = useState("all");
+  const [reminderFilter, setReminderFilter] = useState("all");
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderLead, setReminderLead] = useState(null);
+  const [reminderForm, setReminderForm] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    time: "11:00 AM",
+    note: ""
+  });
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
@@ -86,33 +98,108 @@ export default function App() {
     plan: "Enterprise Plan"
   });
 
-  // Supabase sync
+  // Supabase sync & permanent cloud data retrieval
   useEffect(() => {
     async function loadSupabaseData() {
       try {
         const { data, error } = await supabase.from("briz_leads").select("*").order("id", { ascending: false });
         if (data && data.length > 0) {
-          setLeads(data);
+          const normalized = data.map(row => {
+            let fDate = row.followup_date || null;
+            let fTime = row.followup_time || null;
+            let fNote = row.followup_note || null;
+            if (!fDate && row.notes) {
+              const match = row.notes.match(/\[REMINDER:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})(?:\s+([0-9]{1,2}:[0-9]{2}\s*(?:AM|PM|am|pm)?))?\s*\|\s*([^\]]+)\]/);
+              if (match) {
+                fDate = match[1];
+                fTime = match[2] || "11:00 AM";
+                fNote = match[3];
+              }
+            }
+            return {
+              ...row,
+              company: row.company_name || row.company || "Jay Shree Ambe Food Machinery",
+              followup_date: fDate,
+              followup_time: fTime,
+              followup_note: fNote
+            };
+          });
+          setLeads(normalized);
         }
       } catch (err) {
-        console.log("Supabase fallback");
+        console.log("Supabase fallback", err);
       }
     }
     loadSupabaseData();
   }, []);
 
-  // Filter Leads (Strict Client Workspace Separation)
+  // Exact Date & Time Formatter
+  const formatDateTime = (isoString) => {
+    if (!isoString) return "N/A";
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return isoString;
+      return d.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      }) + ", " + d.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+      });
+    } catch (e) {
+      return isoString;
+    }
+  };
+
+  // Follow-Up Reminder Urgency Status
+  const getLeadReminderStatus = (lead) => {
+    if (!lead || !lead.followup_date) return null;
+    const today = new Date().toISOString().slice(0, 10);
+    if (lead.followup_date < today) return "overdue";
+    if (lead.followup_date === today) return "today";
+    return "upcoming";
+  };
+
+  // Date Filter Matcher across Months & Years
+  const matchesDateFilter = (createdDateStr) => {
+    if (dateFilter === "all") return true;
+    if (!createdDateStr) return false;
+    if (dateFilter === "this_month") return createdDateStr.startsWith("2026-10");
+    if (dateFilter === "last_month") return createdDateStr.startsWith("2026-09");
+    if (dateFilter === "year_2026") return createdDateStr.startsWith("2026");
+    if (dateFilter === "year_2025") return createdDateStr.startsWith("2025");
+    return true;
+  };
+
+  // Count Active Follow-Ups for Sidebar Alert Badge
+  const dueRemindersCount = leads.filter(l => {
+    const status = getLeadReminderStatus(l);
+    const matchComp = (l.company || l.company_name || "Jay Shree Ambe Food Machinery") === activeClient;
+    return matchComp && (status === "overdue" || status === "today") && l.stage !== "won" && l.stage !== "lost";
+  }).length;
+
+  // Filter Leads (Strict Client Workspace Separation + Month/Year + Reminders)
   const filteredLeads = leads.filter(lead => {
-    const leadComp = lead.company || "Jay Shree Ambe Food Machinery";
+    const leadComp = lead.company || lead.company_name || "Jay Shree Ambe Food Machinery";
     const matchCompany = leadComp === activeClient;
     const matchRep = (selectedRep === "All Representatives (Admin View)") || (lead.assigned_rep === selectedRep);
     const matchStage = stageFilter === "all" || lead.stage === stageFilter;
+    const matchDate = matchesDateFilter(lead.created_at);
+    const reminderStatus = getLeadReminderStatus(lead);
+    const matchReminder = 
+      reminderFilter === "all" ? true :
+      reminderFilter === "overdue" ? reminderStatus === "overdue" :
+      reminderFilter === "today" ? reminderStatus === "today" :
+      reminderFilter === "upcoming" ? reminderStatus === "upcoming" :
+      reminderFilter === "none" ? !reminderStatus : true;
     const matchSearch = 
       lead.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.phone.includes(searchTerm) ||
       (lead.city && lead.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (lead.requirement && lead.requirement.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchCompany && matchRep && matchStage && matchSearch;
+    return matchCompany && matchRep && matchStage && matchDate && matchReminder && matchSearch;
   });
 
   // Financial Metrics
@@ -125,6 +212,119 @@ export default function App() {
     .filter(l => l.stage === "won")
     .reduce((sum, l) => sum + Number(l.deal_value || 0), 0);
   const winRate = Math.round((leads.filter(l => l.stage === "won").length / (leads.length || 1)) * 100);
+
+  // Delete Lead Handler (Permanently removes from UI and Supabase DB)
+  const handleDeleteLead = async (leadId, customerName) => {
+    const ok = window.confirm(
+      `Are you sure you want to permanently delete lead for "${customerName}"?\n\nThis will remove the customer record, quotations, and interaction logs from the cloud database.`
+    );
+    if (!ok) return;
+
+    setLeads(prev => prev.filter(l => l.id !== leadId));
+    if (activeLeadDrawer && activeLeadDrawer.id === leadId) {
+      setActiveLeadDrawer(null);
+    }
+    try {
+      await supabase.from("briz_leads").delete().eq("id", leadId);
+    } catch (err) {
+      console.error("Failed to delete lead from Supabase:", err);
+    }
+  };
+
+  // Open Follow-up Reminder Modal
+  const openReminderModal = (lead) => {
+    setReminderLead(lead);
+    setReminderForm({
+      date: lead.followup_date || new Date().toISOString().slice(0, 10),
+      time: lead.followup_time || "11:00 AM",
+      note: lead.followup_note || ""
+    });
+    setShowReminderModal(true);
+  };
+
+  // Save Follow-up Reminder to Lead & Supabase
+  const handleSaveReminder = async (e) => {
+    e.preventDefault();
+    if (!reminderLead) return;
+
+    const tag = `[REMINDER: ${reminderForm.date} ${reminderForm.time} | ${reminderForm.note}]`;
+    const cleanNotes = (reminderLead.notes || "").replace(/\[REMINDER:[^\]]+\]\n?/g, "").trim();
+    const updatedNotes = cleanNotes ? `${tag}\n${cleanNotes}` : tag;
+
+    const updated = leads.map(l => {
+      if (l.id === reminderLead.id) {
+        return {
+          ...l,
+          followup_date: reminderForm.date,
+          followup_time: reminderForm.time,
+          followup_note: reminderForm.note,
+          notes: updatedNotes,
+          updated_at: new Date().toISOString()
+        };
+      }
+      return l;
+    });
+
+    setLeads(updated);
+    if (activeLeadDrawer && activeLeadDrawer.id === reminderLead.id) {
+      setActiveLeadDrawer({
+        ...activeLeadDrawer,
+        followup_date: reminderForm.date,
+        followup_time: reminderForm.time,
+        followup_note: reminderForm.note,
+        notes: updatedNotes,
+        updated_at: new Date().toISOString()
+      });
+    }
+    setShowReminderModal(false);
+
+    try {
+      await supabase.from("briz_leads").update({
+        notes: updatedNotes,
+        updated_at: new Date().toISOString()
+      }).eq("id", reminderLead.id);
+    } catch (err) {
+      console.error("Supabase update reminder error:", err);
+    }
+  };
+
+  // Clear / Complete Follow-up Reminder
+  const handleClearReminder = async (leadId) => {
+    const target = leads.find(l => l.id === leadId);
+    if (!target) return;
+    const cleanNotes = (target.notes || "").replace(/\[REMINDER:[^\]]+\]\n?/g, "").trim();
+    const updated = leads.map(l => {
+      if (l.id === leadId) {
+        return {
+          ...l,
+          followup_date: null,
+          followup_time: null,
+          followup_note: null,
+          notes: cleanNotes,
+          updated_at: new Date().toISOString()
+        };
+      }
+      return l;
+    });
+    setLeads(updated);
+    if (activeLeadDrawer && activeLeadDrawer.id === leadId) {
+      setActiveLeadDrawer({
+        ...activeLeadDrawer,
+        followup_date: null,
+        followup_time: null,
+        followup_note: null,
+        notes: cleanNotes
+      });
+    }
+    try {
+      await supabase.from("briz_leads").update({
+        notes: cleanNotes,
+        updated_at: new Date().toISOString()
+      }).eq("id", leadId);
+    } catch (err) {
+      console.error("Supabase clear reminder error:", err);
+    }
+  };
 
   // Advance Stage
   const advanceStage = async (leadId) => {
@@ -200,19 +400,28 @@ export default function App() {
     } catch (e) {}
   };
 
-  // Save Note in Drawer
-  const handleSaveNote = (leadId) => {
+  // Save Note in Drawer with Supabase Cloud Sync
+  const handleSaveNote = async (leadId) => {
     if (!notesEdit.trim()) return;
-    const updated = leads.map(l => {
-      if (l.id === leadId) {
-        const newNotes = l.notes ? `${l.notes}\n[${new Date().toLocaleTimeString()}]: ${notesEdit}` : notesEdit;
-        return { ...l, notes: newNotes };
-      }
-      return l;
-    });
+    const timeStampStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) + " " + new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+    const target = leads.find(l => l.id === leadId);
+    const newNotes = target && target.notes 
+      ? `${target.notes}\n[${timeStampStr}]: ${notesEdit}` 
+      : `[${timeStampStr}]: ${notesEdit}`;
+    const updated = leads.map(l => l.id === leadId ? { ...l, notes: newNotes, updated_at: new Date().toISOString() } : l);
     setLeads(updated);
-    setActiveLeadDrawer({ ...activeLeadDrawer, notes: activeLeadDrawer.notes ? `${activeLeadDrawer.notes}\n[${new Date().toLocaleTimeString()}]: ${notesEdit}` : notesEdit });
+    if (activeLeadDrawer && activeLeadDrawer.id === leadId) {
+      setActiveLeadDrawer({ ...activeLeadDrawer, notes: newNotes, updated_at: new Date().toISOString() });
+    }
     setNotesEdit("");
+    try {
+      await supabase.from("briz_leads").update({
+        notes: newNotes,
+        updated_at: new Date().toISOString()
+      }).eq("id", leadId);
+    } catch (err) {
+      console.error("Failed to save note to Supabase:", err);
+    }
   };
 
   // Quotation Calculations
@@ -510,6 +719,19 @@ export default function App() {
           >
             <LayoutGrid size={18} />
             {!sidebarCollapsed && <span>Kanban Pipeline</span>}
+          </button>
+
+          <button 
+            className={`nav-item ${activeTab === "reminders" ? "active" : ""}`}
+            onClick={() => setActiveTab("reminders")}
+          >
+            <Clock size={18} />
+            {!sidebarCollapsed && (
+              <span className="flex-row-between">
+                <span>Follow-Up Reminders</span>
+                {dueRemindersCount > 0 && <span className="reminder-alert-badge">{dueRemindersCount}</span>}
+              </span>
+            )}
           </button>
 
           <button 
@@ -844,6 +1066,38 @@ export default function App() {
               </div>
 
               <div className="filter-item">
+                <Calendar size={15} className="text-muted" />
+                <span className="filter-label">Month & Year:</span>
+                <select 
+                  value={dateFilter} 
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="all">📅 All Time (Full History)</option>
+                  <option value="this_month">📅 This Month (October 2026)</option>
+                  <option value="last_month">📅 September 2026</option>
+                  <option value="year_2026">📆 Full Year 2026</option>
+                  <option value="year_2025">📆 Year 2025</option>
+                </select>
+              </div>
+
+              <div className="filter-item">
+                <Clock size={15} className="text-muted" />
+                <span className="filter-label">Follow-Up:</span>
+                <select 
+                  value={reminderFilter} 
+                  onChange={(e) => setReminderFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="all">All Leads</option>
+                  <option value="today">🟡 Due Today</option>
+                  <option value="overdue">🔴 Overdue Follow-up</option>
+                  <option value="upcoming">🟢 Upcoming Scheduled</option>
+                  <option value="none">⚪ No Reminder Set</option>
+                </select>
+              </div>
+
+              <div className="filter-item">
                 <Users size={15} className="text-muted" />
                 <span className="filter-label">Sales Rep:</span>
                 <select 
@@ -859,7 +1113,7 @@ export default function App() {
               </div>
 
               <div className="results-counter">
-                Showing <strong>{filteredLeads.length}</strong> of <strong>{leads.length}</strong> inquiries
+                Showing <strong>{filteredLeads.length}</strong> inquiries
               </div>
             </div>
 
@@ -867,12 +1121,13 @@ export default function App() {
               <table className="crm-data-table">
                 <thead>
                   <tr>
-                    <th>Customer Name</th>
+                    <th>Customer & Date/Time</th>
                     <th>Phone / WhatsApp</th>
                     <th>Location</th>
                     <th>{activeClient === "MNP Holidays" ? "Tour Package / Destination" : "Machine Requirement"}</th>
                     <th>Deal Value</th>
                     <th>Current Stage</th>
+                    <th>⏰ Next Follow-Up</th>
                     <th>Assigned Rep</th>
                     <th>Actions</th>
                   </tr>
@@ -884,7 +1139,10 @@ export default function App() {
                         <div className="customer-avatar">{lead.customer_name.charAt(0)}</div>
                         <div>
                           <div className="customer-name-text">{lead.customer_name}</div>
-                          <div className="lead-created-date">{lead.created_at ? lead.created_at.slice(0, 10) : "Today"}</div>
+                          <div className="lead-datetime-badge">
+                            <Calendar size={11} />
+                            <span>{formatDateTime(lead.created_at)}</span>
+                          </div>
                         </div>
                       </td>
 
@@ -926,6 +1184,38 @@ export default function App() {
                       </td>
 
                       <td>
+                        {(() => {
+                          const status = getLeadReminderStatus(lead);
+                          if (status === "overdue") {
+                            return (
+                              <span className="reminder-pill overdue" title="Overdue Call" onClick={() => openReminderModal(lead)}>
+                                <AlertTriangle size={11} /> {lead.followup_date.slice(5)} {lead.followup_time || ""}
+                              </span>
+                            );
+                          }
+                          if (status === "today") {
+                            return (
+                              <span className="reminder-pill today" title="Due Today!" onClick={() => openReminderModal(lead)}>
+                                <Clock size={11} /> Today {lead.followup_time || ""}
+                              </span>
+                            );
+                          }
+                          if (status === "upcoming") {
+                            return (
+                              <span className="reminder-pill upcoming" title="Upcoming Scheduled" onClick={() => openReminderModal(lead)}>
+                                <Calendar size={11} /> {lead.followup_date.slice(5)}
+                              </span>
+                            );
+                          }
+                          return (
+                            <span className="reminder-pill none" onClick={() => openReminderModal(lead)}>
+                              + Set Reminder
+                            </span>
+                          );
+                        })()}
+                      </td>
+
+                      <td>
                         <span className="rep-badge-pill">
                           <span className="rep-mini-dot"></span>
                           {lead.assigned_rep}
@@ -940,6 +1230,14 @@ export default function App() {
                             onClick={() => { setActiveLeadDrawer(lead); setNotesEdit(""); }}
                           >
                             <Eye size={15} />
+                          </button>
+
+                          <button 
+                            className="icon-action-btn reminder" 
+                            title="Schedule Follow-Up Reminder"
+                            onClick={() => openReminderModal(lead)}
+                          >
+                            <Clock size={15} />
                           </button>
 
                           <button 
@@ -964,6 +1262,14 @@ export default function App() {
                               <ChevronRight size={15} />
                             </button>
                           )}
+
+                          <button 
+                            className="icon-action-btn delete" 
+                            title="Delete Lead"
+                            onClick={() => handleDeleteLead(lead.id, lead.customer_name)}
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1030,6 +1336,23 @@ export default function App() {
 
                           <div className="card-machine-pill">{lead.requirement}</div>
 
+                          <div className="card-datetime-row">
+                            <span className="card-created-txt">📅 {formatDateTime(lead.created_at)}</span>
+                            {(() => {
+                              const status = getLeadReminderStatus(lead);
+                              if (status === "overdue") {
+                                return <span className="reminder-pill overdue" onClick={() => openReminderModal(lead)}><AlertTriangle size={10} /> Overdue</span>;
+                              }
+                              if (status === "today") {
+                                return <span className="reminder-pill today" onClick={() => openReminderModal(lead)}><Clock size={10} /> Due Today</span>;
+                              }
+                              if (status === "upcoming") {
+                                return <span className="reminder-pill upcoming" onClick={() => openReminderModal(lead)}><Calendar size={10} /> {lead.followup_date.slice(5)}</span>;
+                              }
+                              return null;
+                            })()}
+                          </div>
+
                           <div className="card-footer-row">
                             <div className="card-price-tag">
                               ₹{Number(lead.deal_value || 0).toLocaleString("en-IN")}
@@ -1046,6 +1369,13 @@ export default function App() {
                               </a>
                               <button 
                                 className="card-btn-quote"
+                                title="Schedule Follow-Up Reminder"
+                                onClick={() => openReminderModal(lead)}
+                              >
+                                <Clock size={13} />
+                              </button>
+                              <button 
+                                className="card-btn-quote"
                                 title="Quotation"
                                 onClick={() => {
                                   setQuoteLead(lead);
@@ -1055,6 +1385,13 @@ export default function App() {
                                 }}
                               >
                                 <FileText size={13} />
+                              </button>
+                              <button 
+                                className="card-btn-quote text-danger"
+                                title="Delete Lead"
+                                onClick={() => handleDeleteLead(lead.id, lead.customer_name)}
+                              >
+                                <Trash2 size={13} />
                               </button>
                               {col.id !== "won" ? (
                                 <button 
@@ -1074,6 +1411,254 @@ export default function App() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        
+        {/* TAB: FOLLOW-UP REMINDERS CENTER */}
+        {activeTab === "reminders" && (
+          <div className="content-container fade-in">
+            <div className="view-header">
+              <div>
+                <h1 className="view-title">⏰ Follow-Up Reminders & Daily Calling Desk</h1>
+                <p className="view-subtitle">Scheduled calls, customer re-engagements, and overdue reminders for <strong>{activeClient}</strong></p>
+              </div>
+              <div className="view-actions">
+                <button className="btn-secondary" onClick={() => setActiveTab("leads")}>
+                  <List size={15} /> All Inquiries
+                </button>
+                <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+                  <Plus size={15} /> + New Lead
+                </button>
+              </div>
+            </div>
+
+            {/* Summary Metrics */}
+            <div className="reminders-summary-grid">
+              <div className="reminders-summary-card overdue">
+                <div className="summary-icon-box overdue">
+                  <AlertTriangle size={22} />
+                </div>
+                <div>
+                  <div className="summary-stat-count">
+                    {filteredLeads.filter(l => getLeadReminderStatus(l) === "overdue").length}
+                  </div>
+                  <div className="summary-stat-title">Overdue Follow-ups (Urgent)</div>
+                </div>
+              </div>
+
+              <div className="reminders-summary-card today">
+                <div className="summary-icon-box today">
+                  <Clock size={22} />
+                </div>
+                <div>
+                  <div className="summary-stat-count">
+                    {filteredLeads.filter(l => getLeadReminderStatus(l) === "today").length}
+                  </div>
+                  <div className="summary-stat-title">Calls Scheduled For Today</div>
+                </div>
+              </div>
+
+              <div className="reminders-summary-card upcoming">
+                <div className="summary-icon-box upcoming">
+                  <Calendar size={22} />
+                </div>
+                <div>
+                  <div className="summary-stat-count">
+                    {filteredLeads.filter(l => getLeadReminderStatus(l) === "upcoming").length}
+                  </div>
+                  <div className="summary-stat-title">Upcoming Schedule (Next 7+ Days)</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3-Column Reminders Board */}
+            <div className="reminders-columns-grid">
+              {/* Column 1: Overdue */}
+              <div className="reminders-section-col">
+                <div className="reminders-section-header">
+                  <span className="reminders-section-title text-danger">
+                    <AlertTriangle size={16} /> 🔴 Overdue Calls ({filteredLeads.filter(l => getLeadReminderStatus(l) === "overdue").length})
+                  </span>
+                </div>
+                <div className="reminders-stack">
+                  {filteredLeads.filter(l => getLeadReminderStatus(l) === "overdue").length === 0 ? (
+                    <div className="empty-state-card">✅ No overdue calls! All caught up.</div>
+                  ) : (
+                    filteredLeads.filter(l => getLeadReminderStatus(l) === "overdue").map(lead => (
+                      <div key={lead.id} className="reminders-card-item">
+                        <div className="reminder-card-top">
+                          <span className="reminder-cust-name" onClick={() => { setActiveLeadDrawer(lead); setNotesEdit(""); }}>
+                            {lead.customer_name}
+                          </span>
+                          <span className="reminder-pill overdue">
+                            {lead.followup_date} {lead.followup_time}
+                          </span>
+                        </div>
+                        <div className="card-location">
+                          <MapPin size={12} />
+                          <span>{lead.city || "Not specified"}, {lead.state}</span>
+                        </div>
+                        <div className="card-machine-pill">{lead.requirement}</div>
+                        {lead.followup_note && (
+                          <div className="reminder-note-box">
+                            <strong>Note:</strong> {lead.followup_note}
+                          </div>
+                        )}
+                        <div className="reminder-actions-row">
+                          <a href={`tel:${lead.phone}`} className="btn-reminder-action call">
+                            <Phone size={13} /> Call
+                          </a>
+                          <a 
+                            href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Namaste ${lead.customer_name} ji, Jay Shree Ambe Food Machinery se follow-up call/message regarding your inquiry for ${lead.requirement}. Kya aaj baat ho sakti hai?`)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-reminder-action wa"
+                          >
+                            <MessageSquare size={13} /> WhatsApp
+                          </a>
+                          <button 
+                            className="btn-reminder-action done"
+                            title="Mark as Completed"
+                            onClick={() => handleClearReminder(lead.id)}
+                          >
+                            <Check size={13} />
+                          </button>
+                          <button 
+                            className="btn-reminder-action done"
+                            title="Reschedule Follow-up"
+                            onClick={() => openReminderModal(lead)}
+                          >
+                            <Clock size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Column 2: Due Today */}
+              <div className="reminders-section-col">
+                <div className="reminders-section-header">
+                  <span className="reminders-section-title text-amber">
+                    <Clock size={16} /> 🟡 Due Today ({filteredLeads.filter(l => getLeadReminderStatus(l) === "today").length})
+                  </span>
+                </div>
+                <div className="reminders-stack">
+                  {filteredLeads.filter(l => getLeadReminderStatus(l) === "today").length === 0 ? (
+                    <div className="empty-state-card">No more calls scheduled for today.</div>
+                  ) : (
+                    filteredLeads.filter(l => getLeadReminderStatus(l) === "today").map(lead => (
+                      <div key={lead.id} className="reminders-card-item">
+                        <div className="reminder-card-top">
+                          <span className="reminder-cust-name" onClick={() => { setActiveLeadDrawer(lead); setNotesEdit(""); }}>
+                            {lead.customer_name}
+                          </span>
+                          <span className="reminder-pill today">
+                            Today {lead.followup_time || "11:00 AM"}
+                          </span>
+                        </div>
+                        <div className="card-location">
+                          <MapPin size={12} />
+                          <span>{lead.city || "Not specified"}, {lead.state}</span>
+                        </div>
+                        <div className="card-machine-pill">{lead.requirement}</div>
+                        {lead.followup_note && (
+                          <div className="reminder-note-box">
+                            <strong>Agenda:</strong> {lead.followup_note}
+                          </div>
+                        )}
+                        <div className="reminder-actions-row">
+                          <a href={`tel:${lead.phone}`} className="btn-reminder-action call">
+                            <Phone size={13} /> Call
+                          </a>
+                          <a 
+                            href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Namaste ${lead.customer_name} ji, Jay Shree Ambe Food Machinery se scheduled follow-up. Aapne ${lead.requirement} ke liye baat karni thi.`)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-reminder-action wa"
+                          >
+                            <MessageSquare size={13} /> WhatsApp
+                          </a>
+                          <button 
+                            className="btn-reminder-action done"
+                            title="Mark Completed"
+                            onClick={() => handleClearReminder(lead.id)}
+                          >
+                            <Check size={13} />
+                          </button>
+                          <button 
+                            className="btn-reminder-action done"
+                            title="Reschedule Follow-up"
+                            onClick={() => openReminderModal(lead)}
+                          >
+                            <Clock size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Column 3: Upcoming */}
+              <div className="reminders-section-col">
+                <div className="reminders-section-header">
+                  <span className="reminders-section-title text-blue">
+                    <Calendar size={16} /> 🟢 Upcoming Scheduled ({filteredLeads.filter(l => getLeadReminderStatus(l) === "upcoming").length})
+                  </span>
+                </div>
+                <div className="reminders-stack">
+                  {filteredLeads.filter(l => getLeadReminderStatus(l) === "upcoming").length === 0 ? (
+                    <div className="empty-state-card">No upcoming calls scheduled yet.</div>
+                  ) : (
+                    filteredLeads.filter(l => getLeadReminderStatus(l) === "upcoming").map(lead => (
+                      <div key={lead.id} className="reminders-card-item">
+                        <div className="reminder-card-top">
+                          <span className="reminder-cust-name" onClick={() => { setActiveLeadDrawer(lead); setNotesEdit(""); }}>
+                            {lead.customer_name}
+                          </span>
+                          <span className="reminder-pill upcoming">
+                            {lead.followup_date} {lead.followup_time}
+                          </span>
+                        </div>
+                        <div className="card-location">
+                          <MapPin size={12} />
+                          <span>{lead.city || "Not specified"}, {lead.state}</span>
+                        </div>
+                        <div className="card-machine-pill">{lead.requirement}</div>
+                        {lead.followup_note && (
+                          <div className="reminder-note-box">
+                            <strong>Note:</strong> {lead.followup_note}
+                          </div>
+                        )}
+                        <div className="reminder-actions-row">
+                          <a href={`tel:${lead.phone}`} className="btn-reminder-action call">
+                            <Phone size={13} /> Call
+                          </a>
+                          <a 
+                            href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-reminder-action wa"
+                          >
+                            <MessageSquare size={13} /> WhatsApp
+                          </a>
+                          <button 
+                            className="btn-reminder-action done"
+                            title="Reschedule Follow-up"
+                            onClick={() => openReminderModal(lead)}
+                          >
+                            <Clock size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1472,6 +2057,36 @@ export default function App() {
               </div>
 
               <div className="drawer-section">
+                <h4 className="section-title">Inquiry History & Timestamps</h4>
+                <div className="spec-row">
+                  <span className="spec-label">📅 Inquiry Received:</span>
+                  <span className="spec-value">{formatDateTime(activeLeadDrawer.created_at)}</span>
+                </div>
+                <div className="spec-row">
+                  <span className="spec-label">🔄 Last Activity Update:</span>
+                  <span className="spec-value">{formatDateTime(activeLeadDrawer.updated_at || activeLeadDrawer.created_at)}</span>
+                </div>
+                <div className="spec-row">
+                  <span className="spec-label">⏰ Follow-Up Schedule:</span>
+                  <span className="spec-value">
+                    {activeLeadDrawer.followup_date ? (
+                      <span className="font-semibold text-emerald">
+                        {activeLeadDrawer.followup_date} at {activeLeadDrawer.followup_time || "11:00 AM"}
+                      </span>
+                    ) : (
+                      <span className="text-muted">No follow-up scheduled</span>
+                    )}
+                    <button 
+                      className="link-button ml-2" 
+                      onClick={() => openReminderModal(activeLeadDrawer)}
+                    >
+                      {activeLeadDrawer.followup_date ? "Reschedule" : "+ Set Follow-Up"}
+                    </button>
+                  </span>
+                </div>
+              </div>
+
+              <div className="drawer-section">
                 <h4 className="section-title">Inquiry Specifications</h4>
                 <div className="spec-row">
                   <span className="spec-label">Machine Requirement:</span>
@@ -1529,7 +2144,114 @@ export default function App() {
                   ))}
                 </div>
               </div>
+
+              <button 
+                className="drawer-delete-btn"
+                onClick={() => handleDeleteLead(activeLeadDrawer.id, activeLeadDrawer.customer_name)}
+              >
+                <Trash2 size={16} /> Permanently Delete This Lead
+              </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      
+      {/* MODAL: SCHEDULE FOLLOW-UP REMINDER */}
+      {showReminderModal && reminderLead && (
+        <div className="modal-backdrop" onClick={() => setShowReminderModal(false)}>
+          <div className="modal-dialog fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">⏰ Schedule Follow-Up Call / Reminder</h3>
+              <button className="modal-close" onClick={() => setShowReminderModal(false)}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSaveReminder} className="modal-form">
+              <div className="form-group">
+                <label>Customer Name</label>
+                <input 
+                  type="text" 
+                  value={reminderLead.customer_name} 
+                  disabled 
+                  className="crm-input disabled" 
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Follow-Up Date *</label>
+                  <input 
+                    type="date" 
+                    value={reminderForm.date}
+                    onChange={(e) => setReminderForm({ ...reminderForm, date: e.target.value })}
+                    required
+                    className="crm-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Scheduled Time *</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. 11:30 AM or 04:00 PM"
+                    value={reminderForm.time}
+                    onChange={(e) => setReminderForm({ ...reminderForm, time: e.target.value })}
+                    required
+                    className="crm-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Quick Presets</label>
+                <div className="quick-presets-row">
+                  <button 
+                    type="button" 
+                    className="btn-preset-pill"
+                    onClick={() => setReminderForm({ ...reminderForm, date: new Date().toISOString().slice(0, 10), time: "05:00 PM" })}
+                  >
+                    Today Evening (5:00 PM)
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-preset-pill"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 1);
+                      setReminderForm({ ...reminderForm, date: d.toISOString().slice(0, 10), time: "11:00 AM" });
+                    }}
+                  >
+                    Tomorrow Morning (11:00 AM)
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-preset-pill"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 3);
+                      setReminderForm({ ...reminderForm, date: d.toISOString().slice(0, 10), time: "03:00 PM" });
+                    }}
+                  >
+                    In 3 Days
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Follow-Up Agenda / Notes *</label>
+                <textarea 
+                  placeholder="e.g. Call for advance token payment, check transport subsidy, share factory video..."
+                  value={reminderForm.note}
+                  onChange={(e) => setReminderForm({ ...reminderForm, note: e.target.value })}
+                  required
+                  rows={3}
+                  className="crm-textarea"
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowReminderModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary">Save Follow-Up Reminder</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

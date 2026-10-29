@@ -12,6 +12,9 @@ export const INITIAL_LEADS = [
     assigned_rep: "Mukeshbhai",
     deal_value: 95000,
     created_at: "2026-10-27T09:15:00Z",
+    followup_date: null,
+    followup_time: null,
+    followup_note: null,
     notes: "Advance payment of ₹25,000 received via UPI. Delivery scheduled.",
     timeline: [
       { time: "2026-10-27 09:15 AM", text: "Inquiry received via WhatsApp Bot" },
@@ -31,7 +34,10 @@ export const INITIAL_LEADS = [
     assigned_rep: "Mukeshbhai",
     deal_value: 145000,
     created_at: "2026-10-27T10:45:00Z",
-    notes: "Quotation PDF sent. Follow up on Saturday morning regarding transport subsidy.",
+    followup_date: "2026-10-29",
+    followup_time: "04:30 PM",
+    followup_note: "Follow up on quotation and transport subsidy to Chitrakoot",
+    notes: "[REMINDER: 2026-10-29 04:30 PM | Follow up on quotation and transport subsidy to Chitrakoot]\nQuotation PDF sent. Follow up regarding transport subsidy.",
     timeline: [
       { time: "2026-10-27 10:45 AM", text: "WhatsApp inquiry for 10 HP Cyclone Pulverizer" },
       { time: "2026-10-27 02:15 PM", text: "Quotation generated & sent via WhatsApp" }
@@ -49,7 +55,10 @@ export const INITIAL_LEADS = [
     assigned_rep: "Anilbhai",
     deal_value: 68000,
     created_at: "2026-10-27T11:30:00Z",
-    notes: "Visiting Ahmedabad factory next Tuesday for live demonstration.",
+    followup_date: "2026-10-28",
+    followup_time: "11:00 AM",
+    followup_note: "Confirm arrival date for live factory grinding demonstration",
+    notes: "[REMINDER: 2026-10-28 11:00 AM | Confirm arrival date for live factory grinding demonstration]\nVisiting Ahmedabad factory next Tuesday for live demonstration.",
     timeline: [
       { time: "2026-10-27 11:30 AM", text: "Inquiry received from Indiamart / WhatsApp" }
     ]
@@ -66,7 +75,10 @@ export const INITIAL_LEADS = [
     assigned_rep: "Anilbhai",
     deal_value: 72000,
     created_at: "2026-10-27T12:00:00Z",
-    notes: "Requested live grinding video of wheat & maize on WhatsApp.",
+    followup_date: "2026-10-29",
+    followup_time: "06:00 PM",
+    followup_note: "Send WhatsApp video of 5 HP Chakki grinding continuous maize",
+    notes: "[REMINDER: 2026-10-29 06:00 PM | Send WhatsApp video of 5 HP Chakki grinding continuous maize]\nRequested live grinding video of wheat & maize on WhatsApp.",
     timeline: [
       { time: "2026-10-27 12:00 PM", text: "Inquiry captured by sales agent" }
     ]
@@ -83,7 +95,10 @@ export const INITIAL_LEADS = [
     assigned_rep: "Hemali",
     deal_value: 220000,
     created_at: "2026-10-27T13:20:00Z",
-    notes: "Big commercial plant inquiry for turmeric and coriander grinding.",
+    followup_date: "2026-10-31",
+    followup_time: "10:30 AM",
+    followup_note: "Review 3-phase electric connection status for 20 HP Plant",
+    notes: "[REMINDER: 2026-10-31 10:30 AM | Review 3-phase electric connection status for 20 HP Plant]\nBig commercial plant inquiry for turmeric and coriander grinding.",
     timeline: [
       { time: "2026-10-27 01:20 PM", text: "Inquiry received for full masala plant" }
     ]
@@ -100,7 +115,10 @@ export const INITIAL_LEADS = [
     assigned_rep: "Lata",
     deal_value: 115000,
     created_at: "2026-10-27T14:10:00Z",
-    notes: "Needs GST quotation and transport delivery charges to UP.",
+    followup_date: "2026-10-30",
+    followup_time: "02:00 PM",
+    followup_note: "Discuss GST bill & transport delivery to Farrukhabad",
+    notes: "[REMINDER: 2026-10-30 02:00 PM | Discuss GST bill & transport delivery to Farrukhabad]\nNeeds GST quotation and transport delivery charges to UP.",
     timeline: [
       { time: "2026-10-27 02:10 PM", text: "Inquiry assigned to Lata" }
     ]
@@ -117,9 +135,33 @@ export const INITIAL_LEADS = [
     assigned_rep: "Anilbhai",
     deal_value: 85000,
     created_at: "2026-10-28T08:30:00Z",
-    notes: "New WhatsApp inquiry received this morning.",
+    followup_date: "2026-10-29",
+    followup_time: "05:00 PM",
+    followup_note: "Introductory phone call to understand flour mill capacity requirements",
+    notes: "[REMINDER: 2026-10-29 05:00 PM | Introductory phone call to understand flour mill capacity requirements]\nNew WhatsApp inquiry received this morning.",
     timeline: [
       { time: "2026-10-28 08:30 AM", text: "Lead captured from WhatsApp greeting" }
+    ]
+  },
+  {
+    id: 8,
+    company: "Jay Shree Ambe Food Machinery",
+    customer_name: "Rameshwar Dayal",
+    phone: "+91 9876543210",
+    city: "Mathura",
+    state: "Uttar Pradesh",
+    requirement: "15 HP Cyclone Pulverizer with Starter",
+    stage: "won",
+    assigned_rep: "Mukeshbhai",
+    deal_value: 175000,
+    created_at: "2026-09-18T14:20:00Z",
+    followup_date: null,
+    followup_time: null,
+    followup_note: null,
+    notes: "Historical Deal (September 2026). Delivered via V-Trans transport. Advance & balance full settled.",
+    timeline: [
+      { time: "2026-09-18 02:20 PM", text: "Inquiry received on WhatsApp" },
+      { time: "2026-09-22 11:00 AM", text: "Quotation accepted & payment processed" }
     ]
   },
 
@@ -136,6 +178,9 @@ export const INITIAL_LEADS = [
     assigned_rep: "MNP Tour Desk",
     deal_value: 168000,
     created_at: "2026-10-28T10:00:00Z",
+    followup_date: null,
+    followup_time: null,
+    followup_note: null,
     notes: "Flight tickets & Coral Island speedboat booked. Full advance received.",
     timeline: [
       { time: "2026-10-28 10:00 AM", text: "Website holiday inquiry received on MNP Holidays" },
@@ -155,7 +200,10 @@ export const INITIAL_LEADS = [
     assigned_rep: "MNP Tour Desk",
     deal_value: 240000,
     created_at: "2026-10-28T11:30:00Z",
-    notes: "Travel dates: 15th Nov 2026. 4-Star hotel quotation sent with visa.",
+    followup_date: "2026-10-29",
+    followup_time: "03:30 PM",
+    followup_note: "Call Dr. Mehul regarding Burj Khalifa prime sunset slot tickets",
+    notes: "[REMINDER: 2026-10-29 03:30 PM | Call Dr. Mehul regarding Burj Khalifa prime sunset slot tickets]\nTravel dates: 15th Nov 2026. 4-Star hotel quotation sent with visa.",
     timeline: [
       { time: "2026-10-28 11:30 AM", text: "WhatsApp lead from Instagram campaign" }
     ]
@@ -172,7 +220,10 @@ export const INITIAL_LEADS = [
     assigned_rep: "MNP Tour Desk",
     deal_value: 195000,
     created_at: "2026-10-27T16:00:00Z",
-    notes: "Client requested customized candlelight dinner and water sports.",
+    followup_date: "2026-10-30",
+    followup_time: "11:00 AM",
+    followup_note: "Send Bali private pool villa photos and candlelight dinner options",
+    notes: "[REMINDER: 2026-10-30 11:00 AM | Send Bali private pool villa photos and candlelight dinner options]\nClient requested customized candlelight dinner and water sports.",
     timeline: [
       { time: "2026-10-27 04:00 PM", text: "Inquiry received on MNP Holidays site" }
     ]
@@ -189,7 +240,10 @@ export const INITIAL_LEADS = [
     assigned_rep: "MNP Tour Desk",
     deal_value: 90000,
     created_at: "2026-10-28T14:15:00Z",
-    notes: "Diwali holiday inquiry. Checking flight availability from Ahmedabad to Goa.",
+    followup_date: "2026-10-28",
+    followup_time: "05:00 PM",
+    followup_note: "Confirm Goa beachfront resort availability for 6 pax",
+    notes: "[REMINDER: 2026-10-28 05:00 PM | Confirm Goa beachfront resort availability for 6 pax]\nDiwali holiday inquiry. Checking flight availability from Ahmedabad to Goa.",
     timeline: [
       { time: "2026-10-28 02:15 PM", text: "Inquiry assigned to MNP Tour Desk" }
     ]
@@ -206,7 +260,10 @@ export const INITIAL_LEADS = [
     assigned_rep: "MNP Tour Desk",
     deal_value: 75000,
     created_at: "2026-10-29T02:00:00Z",
-    notes: "New inquiry from MNP Holidays website contact form.",
+    followup_date: "2026-10-29",
+    followup_time: "04:00 PM",
+    followup_note: "Share Volvo pickup points and hotel category options",
+    notes: "[REMINDER: 2026-10-29 04:00 PM | Share Volvo pickup points and hotel category options]\nNew inquiry from MNP Holidays website contact form.",
     timeline: [
       { time: "2026-10-29 02:00 AM", text: "Lead captured via MNP Holidays Website Webhook" }
     ]

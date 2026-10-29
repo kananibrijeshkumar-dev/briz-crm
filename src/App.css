@@ -2286,3 +2286,333 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ========================================================
+   DELETE BUTTON & ACTIONS
+   ======================================================== */
+.icon-action-btn.delete {
+  color: #ef4444;
+}
+.icon-action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: scale(1.08);
+}
+.icon-action-btn.reminder:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.08);
+}
+
+.drawer-delete-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  margin-top: 20px;
+}
+.drawer-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+/* ========================================================
+   FOLLOW-UP REMINDER BADGES & PILLS
+   ======================================================== */
+.reminder-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+}
+.reminder-pill.overdue {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.reminder-pill.today {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+}
+.reminder-pill.upcoming {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+.reminder-pill.none {
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+}
+.reminder-pill.none:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border-color: #6366f1;
+}
+
+.reminder-alert-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  line-height: 1;
+  animation: pulseBadge 2s infinite;
+}
+@keyframes pulseBadge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ========================================================
+   REMINDERS COMMAND CENTER VIEW
+   ======================================================== */
+.reminders-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.reminders-summary-card {
+  background: rgba(17, 24, 39, 0.7);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.reminders-summary-card.overdue {
+  border-left: 4px solid #ef4444;
+}
+.reminders-summary-card.today {
+  border-left: 4px solid #f59e0b;
+}
+.reminders-summary-card.upcoming {
+  border-left: 4px solid #3b82f6;
+}
+.summary-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+.summary-icon-box.overdue { background: rgba(239, 68, 68, 0.18); color: #f87171; }
+.summary-icon-box.today { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+.summary-icon-box.upcoming { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+.summary-stat-count {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.summary-stat-title {
+  font-size: 12px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reminders-columns-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+@media (max-width: 1024px) {
+  .reminders-columns-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.reminders-section-col {
+  background: rgba(17, 24, 39, 0.5);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.reminders-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.reminders-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reminders-card-item {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+.reminders-card-item:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+.reminder-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.reminder-cust-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+}
+.reminder-cust-name:hover {
+  color: #6366f1;
+}
+.reminder-note-box {
+  background: rgba(15, 23, 42, 0.6);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  border-left: 3px solid #6366f1;
+  line-height: 1.4;
+}
+.reminder-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.btn-reminder-action {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+.btn-reminder-action.wa {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.btn-reminder-action.wa:hover {
+  background: rgba(16, 185, 129, 0.28);
+}
+.btn-reminder-action.call {
+  background: rgba(59, 130, 246, 0.16);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.35);
+}
+.btn-reminder-action.call:hover {
+  background: rgba(59, 130, 246, 0.28);
+}
+.btn-reminder-action.done {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.btn-reminder-action.done:hover {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: #10b981;
+}
+
+/* ========================================================
+   EXACT DATE & TIME BADGES
+   ======================================================== */
+.lead-datetime-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+
+/* Card Datetime & Preset Buttons */
+.card-datetime-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0;
+  padding: 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.card-created-txt {
+  font-size: 11px;
+  color: #94a3b8;
+}
+.quick-presets-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.btn-preset-pill {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 999px;
+  color: #a5b4fc;
+  font-size: 11px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-preset-pill:hover {
+  background: rgba(99, 102, 241, 0.28);
+  border-color: #6366f1;
+  color: #ffffff;
+}
+.empty-state-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.card-btn-quote.text-danger:hover {
+  color: #f87171 !important;
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
