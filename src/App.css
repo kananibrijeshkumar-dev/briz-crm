@@ -2121,3 +2121,39 @@
 .btn-invite-wa:hover {
   background: rgba(99, 102, 241, 0.25);
 }
+
+.login-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: #fda4af;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  margin-bottom: 14px;
+}
+.btn-toggle-pwd {
+  background: transparent;
+  border: none;
+  color: #818cf8;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rep-access-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cred-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+}
+.cred-val.pwd {
+  color: #fbbf24;
+  letter-spacing: 0.5px;
+}

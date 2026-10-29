@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { supabase } from "./supabase";
-import { INITIAL_LEADS, SALES_REPS, CLIENT_TENANTS, MACHINE_PRESETS } from "./data";
+import { INITIAL_LEADS, SALES_REPS, CLIENT_TENANTS, MACHINE_PRESETS, ADMIN_USERS } from "./data";
 import "./App.css";
 
 export default function App() {
@@ -22,6 +22,10 @@ export default function App() {
     repName: "All Representatives (Admin View)"
   });
   const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [loginInput, setLoginInput] = useState("owner@jayambefoodmachinery.com");
+  const [loginPasswordInput, setLoginPasswordInput] = useState("Ambe@Owner2026");
+  const [loginError, setLoginError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // App Navigation
   const [activeTab, setActiveTab] = useState("leads");
@@ -263,30 +267,98 @@ export default function App() {
             <h2 className="login-heading">Sign In to Workspace</h2>
             <p className="login-desc">Enter your business credentials or pick a test profile below:</p>
 
-            <form onSubmit={(e) => { e.preventDefault(); setIsAuthenticated(true); }}>
+            {loginError && (
+              <div className="login-error-banner">
+                <AlertCircle size={16} />
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setLoginError("");
+
+              // Normalize input
+              const cleanInput = loginInput.trim().toLowerCase().replace(/[^a-z0-9@.]/g, "");
+              const cleanPhone = loginInput.replace(/[^0-9]/g, "");
+
+              // Check Admins
+              const matchedAdmin = ADMIN_USERS.find(a => 
+                (a.loginId.toLowerCase() === cleanInput || a.phone.replace(/[^0-9]/g, "") === cleanPhone) &&
+                a.password === loginPasswordInput
+              );
+
+              if (matchedAdmin) {
+                setUser({
+                  name: matchedAdmin.name,
+                  email: matchedAdmin.loginId,
+                  role: matchedAdmin.role,
+                  company: matchedAdmin.company,
+                  repName: "All Representatives (Admin View)"
+                });
+                setActiveClient(matchedAdmin.company);
+                setSelectedRep("All Representatives (Admin View)");
+                setIsAuthenticated(true);
+                return;
+              }
+
+              // Check Sales Reps
+              const matchedRep = repsList.find(r => 
+                r.phone.replace(/[^0-9]/g, "") === cleanPhone &&
+                r.password === loginPasswordInput
+              );
+
+              if (matchedRep) {
+                setUser({
+                  name: matchedRep.name,
+                  email: `${matchedRep.name.toLowerCase()}@${(matchedRep.company || "crm").replace(/[^a-z0-9]/g, "").toLowerCase()}.com`,
+                  role: "sales_rep",
+                  company: matchedRep.company || "Jay Shree Ambe Food Machinery",
+                  repName: matchedRep.name
+                });
+                setActiveClient(matchedRep.company || "Jay Shree Ambe Food Machinery");
+                setSelectedRep(matchedRep.name);
+                setIsAuthenticated(true);
+                return;
+              }
+
+              setLoginError("Invalid Mobile Number or Password. Access Denied.");
+            }}>
               <div className="form-group">
-                <label>Work Email or Mobile</label>
+                <label>Login ID (Mobile Number or Work Email)</label>
                 <input 
                   type="text" 
-                  defaultValue={user.email} 
-                  placeholder="name@company.com or +91..." 
+                  value={loginInput} 
+                  onChange={(e) => setLoginInput(e.target.value)}
+                  placeholder="+91 97239 28746 or email..." 
                   className="login-input"
                   required 
                 />
               </div>
 
               <div className="form-group">
-                <label>Password</label>
+                <div className="flex-row-between">
+                  <label>Password</label>
+                  <button 
+                    type="button" 
+                    className="btn-toggle-pwd" 
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
                 <input 
-                  type="password" 
-                  defaultValue="••••••••••••" 
+                  type={showPassword ? "text" : "password"} 
+                  value={loginPasswordInput}
+                  onChange={(e) => setLoginPasswordInput(e.target.value)}
+                  placeholder="Enter your secret password..." 
                   className="login-input" 
                   required 
                 />
               </div>
 
               <button type="submit" className="login-btn-primary">
-                <LogIn size={18} /> Sign In to CRM
+                <LogIn size={18} /> Secure Sign In
               </button>
             </form>
 
@@ -1176,9 +1248,15 @@ export default function App() {
 
                   <div className="rep-card-footer">
                     <div className="rep-access-credentials">
-                      <span className="cred-lbl">Login ID:</span>
-                      <strong className="cred-val">{rep.phone}</strong>
-                      <span className="badge-active-rep">Active Account</span>
+                      <div className="cred-item">
+                        <span className="cred-lbl">Login ID:</span>
+                        <strong className="cred-val">{rep.phone}</strong>
+                      </div>
+                      <div className="cred-item">
+                        <span className="cred-lbl">Password:</span>
+                        <strong className="cred-val pwd">{rep.password || "Rep@123"}</strong>
+                      </div>
+                      <span className="badge-active-rep">Secured</span>
                     </div>
                     <span className="speed-tag">⚡ Response Rate: {rep.rate}</span>
                     <div className="rep-footer-buttons">
@@ -1656,6 +1734,18 @@ export default function App() {
                   placeholder="+91..."
                   value={newRepForm.phone}
                   onChange={(e) => setNewRepForm({ ...newRepForm, phone: e.target.value })}
+                  required
+                  className="crm-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Set Rep Secret Password / PIN *</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Sales@2026 or 4-digit PIN"
+                  value={newRepForm.password || ""}
+                  onChange={(e) => setNewRepForm({ ...newRepForm, password: e.target.value })}
                   required
                   className="crm-input"
                 />
