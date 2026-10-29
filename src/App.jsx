@@ -1,3 +1,4 @@
+import LandingPage from "./LandingPage";
 import React, { useState, useEffect } from "react";
 import { 
   Users, Phone, MessageSquare, Plus, Search, Filter, 
@@ -6,7 +7,7 @@ import {
   LogIn, LogOut, Shield, ShieldCheck, Download, Eye, Send, Settings,
   ArrowUpRight, Check, AlertCircle, RefreshCw, BarChart3, Briefcase,
   DollarSign, UserCheck, ChevronDown, Bell, Copy, Printer,
-  Trash2, Calendar, AlertTriangle
+  Trash2, Calendar, AlertTriangle, Globe
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { supabase } from "./supabase";
@@ -27,6 +28,21 @@ export default function App() {
   const [loginPasswordInput, setLoginPasswordInput] = useState("Ambe@Owner2026");
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // View Mode: 'landing' (Public SaaS Website) or 'app' (CRM Workstation)
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("mode=app")) return "app";
+    if (typeof window !== "undefined" && window.location.search.includes("mode=landing")) return "landing";
+    return (typeof window !== "undefined" && localStorage.getItem("briz_crm_view_mode")) || "landing";
+  });
+
+  const switchViewMode = (mode) => {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("briz_crm_view_mode", mode);
+    }
+  };
+
 
   // App Navigation
   const [activeTab, setActiveTab] = useState("leads");
@@ -769,6 +785,20 @@ export default function App() {
           >
             <Settings size={18} />
             {!sidebarCollapsed && <span>Integrations & API</span>}
+          </button>
+
+          <button 
+            className="nav-item"
+            onClick={() => switchViewMode("landing")}
+            title="Switch to Public Commercial SaaS Website"
+          >
+            <Globe size={18} />
+            {!sidebarCollapsed && (
+              <span className="flex-row-between">
+                <span>Public SaaS Site</span>
+                <span className="badge-saas" style={{ background: "rgba(99, 102, 241, 0.2)", color: "#a5b4fc" }}>Live</span>
+              </span>
+            )}
           </button>
         </nav>
 
