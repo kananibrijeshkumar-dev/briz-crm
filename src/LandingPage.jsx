@@ -3,7 +3,7 @@ import {
   Zap, Check, ArrowRight, Shield, MessageSquare, Clock, 
   FileText, LayoutGrid, Users, Building2, ChevronRight,
   TrendingUp, Award, Star, ExternalLink, Globe, Sparkles,
-  PhoneCall, CheckCircle2, Lock, BarChart3, Database
+  PhoneCall, CheckCircle2, Lock, BarChart3, Database, Phone, Mail, MapPin
 } from "lucide-react";
 import "./LandingPage.css";
 
@@ -480,33 +480,106 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
         </div>
       </section>
 
-      {/* FOOTER */}
+            {/* PROFESSIONAL MULTI-COLUMN FOOTER */}
       <footer className="landing-footer">
-        <div className="footer-top-row">
-          <div className="landing-logo-group" onClick={onEnterWorkstation}>
-            <div className="landing-logo-icon" style={{ width: 32, height: 32 }}>
-              <Zap size={18} />
+        <div className="footer-grid-container">
+          {/* Column 1: Brand & Social */}
+          <div className="footer-col footer-col-brand">
+            <div className="landing-logo-group" onClick={onEnterWorkstation}>
+              <div className="landing-logo-icon" style={{ width: 34, height: 34 }}>
+                <Zap size={20} />
+              </div>
+              <div className="landing-logo-text" style={{ fontSize: 20 }}>
+                Briz<span>CRM</span>
+              </div>
             </div>
-            <div className="landing-logo-text" style={{ fontSize: 18 }}>
-              Briz<span>CRM</span>
+            <p className="footer-brand-tagline">
+              Intelligent Sales Pipeline & Automated WhatsApp CRM engineered for fast-moving sales teams.
+            </p>
+
+            <div className="footer-social-wrap">
+              <span className="footer-social-heading">Follow Us</span>
+              <div className="footer-social-icons">
+                <a href="https://wa.me/919898860145" target="_blank" rel="noreferrer" className="social-icon-btn whatsapp" title="WhatsApp Business">
+                  <MessageSquare size={16} />
+                </a>
+                <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="social-icon-btn linkedin" title="LinkedIn">
+                  <Globe size={16} />
+                </a>
+                <a href="https://brizpatel.online" target="_blank" rel="noreferrer" className="social-icon-btn portfolio" title="Briz AI Studio">
+                  <Sparkles size={16} />
+                </a>
+              </div>
+            </div>
+
+            <div className="footer-copyright-note">
+              Copyright &copy; 2024–2026. All Rights Reserved.
             </div>
           </div>
-          <div style={{ display: "flex", gap: 24 }}>
-            <a href="#features" className="landing-nav-item">Features</a>
-            <a href="#pricing" className="landing-nav-item">Pricing</a>
-            <a href="#integrations" className="landing-nav-item">Integrations</a>
-            <span className="landing-nav-item" onClick={onEnterWorkstation}>Live Portal</span>
+
+          {/* Column 2: Quick Links */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Quick Links</h4>
+            <ul className="footer-links-list">
+              <li><a href="#hero">Home</a></li>
+              <li><a href="#features">Key Features</a></li>
+              <li><a href="#integrations">WhatsApp Automation</a></li>
+              <li><a href="#pricing">Pricing & Plans</a></li>
+              <li><span className="footer-interactive-link" onClick={onEnterWorkstation}>Live Pipeline Demo</span></li>
+              <li><span className="footer-interactive-link" onClick={onOpenLogin}>Team Sign In</span></li>
+            </ul>
+          </div>
+
+          {/* Column 3: Help & Legal */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Help & Legal</h4>
+            <ul className="footer-links-list">
+              <li><a href="#privacy">Privacy Policy</a></li>
+              <li><a href="#terms">Terms & Conditions</a></li>
+              <li><a href="#refund">Refund & Cancellation</a></li>
+              <li><a href="#security">Multi-Tenant Security</a></li>
+              <li><a href="#sla">99.9% Uptime SLA</a></li>
+              <li><a href="#compliance">Meta Cloud Compliance</a></li>
+            </ul>
+          </div>
+
+          {/* Column 4: Contact Info */}
+          <div className="footer-col footer-col-contact">
+            <h4 className="footer-col-title">Contact Info</h4>
+            <div className="footer-company-legal">Briz AI Studio (Briz Patel)</div>
+
+            <div className="footer-contact-item">
+              <MapPin size={16} className="contact-icon" />
+              <span><strong>Address:</strong> Near SG Highway, Ahmedabad, Gujarat 380054, India</span>
+            </div>
+
+            <div className="footer-contact-item">
+              <Mail size={16} className="contact-icon" />
+              <span><strong>Email:</strong> <a href="mailto:briz@brizpatel.online">briz@brizpatel.online</a></span>
+            </div>
+
+            <div className="footer-contact-item">
+              <Phone size={16} className="contact-icon" />
+              <span><strong>Phone / WA:</strong> <a href="tel:+919898860145">+91 98988 60145</a></span>
+            </div>
+
+            <div className="footer-support-hours">
+              Support Hours: Mon – Sat: 9:30 AM – 7:30 PM IST
+            </div>
           </div>
         </div>
 
-        <div className="footer-bottom-row">
-          <div>
-            &copy; 2026 <strong>BrizCRM</strong> — Engineered by <strong>Briz AI Studio</strong> (Briz Patel). All Rights Reserved.
+        {/* Bottom Bar */}
+        <div className="footer-bottom-bar">
+          <div className="bottom-bar-left">
+            Crafted with pride in India &bull; Powering High-Performance Sales Automation
           </div>
-          <div style={{ display: "flex", gap: 16 }}>
-            <span>SSL 256-Bit Encrypted</span>
-            <span>•</span>
-            <span>PostgreSQL Protected</span>
+          <div className="bottom-bar-badges">
+            <span className="security-badge"><Lock size={13} /> SSL 256-Bit Encrypted</span>
+            <span>&bull;</span>
+            <span className="security-badge"><Database size={13} /> PostgreSQL Protected</span>
+            <span>&bull;</span>
+            <span className="security-badge"><Shield size={13} /> RLS Tenant Isolated</span>
           </div>
         </div>
       </footer>
