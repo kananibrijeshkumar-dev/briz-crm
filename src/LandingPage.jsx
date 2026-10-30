@@ -500,7 +500,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
             <div className="footer-social-wrap">
               <span className="footer-social-heading">Follow Us</span>
               <div className="footer-social-icons">
-                <a href="https://wa.me/919898860145" target="_blank" rel="noreferrer" className="social-icon-btn whatsapp" title="WhatsApp Business">
+                <a href="https://wa.me/918799036132" target="_blank" rel="noreferrer" className="social-icon-btn whatsapp" title="WhatsApp Business">
                   <MessageSquare size={16} />
                 </a>
                 <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="social-icon-btn linkedin" title="LinkedIn">
@@ -555,12 +555,12 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
 
             <div className="footer-contact-item">
               <Mail size={16} className="contact-icon" />
-              <span><strong>Email:</strong> <a href="mailto:briz@brizpatel.online">briz@brizpatel.online</a></span>
+              <span><strong>Email:</strong> <a href="mailto:contact@brizpatel.online">contact@brizpatel.online</a></span>
             </div>
 
             <div className="footer-contact-item">
               <Phone size={16} className="contact-icon" />
-              <span><strong>Phone / WA:</strong> <a href="tel:+919898860145">+91 98988 60145</a></span>
+              <span><strong>Phone / WA:</strong> <a href="tel:+918799036132">+91 87990 36132</a></span>
             </div>
 
             <div className="footer-support-hours">
