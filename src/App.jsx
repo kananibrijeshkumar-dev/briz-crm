@@ -395,6 +395,8 @@ export default function App() {
     if (!newLeadForm.customer_name || !newLeadForm.phone) return;
     const created = {
       ...newLeadForm,
+      company: activeClient,
+      company_name: activeClient,
       id: Date.now(),
       created_at: new Date().toISOString(),
       timeline: [{ time: "Just now", text: "Lead created manually via CRM" }]
