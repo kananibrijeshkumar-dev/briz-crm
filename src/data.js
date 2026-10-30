@@ -278,7 +278,7 @@ export const ADMIN_USERS = [
     phone: "+91 98988 60145",
     password: "Briz@Admin2026",
     role: "super_admin",
-    company: "Briz AI Studio"
+    company: "Briz AiWeb Studio"
   },
   {
     id: "jay-ambe-owner",

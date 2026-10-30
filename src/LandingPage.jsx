@@ -500,14 +500,23 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
             <div className="footer-social-wrap">
               <span className="footer-social-heading">Follow Us</span>
               <div className="footer-social-icons">
-                <a href="https://wa.me/918799036132" target="_blank" rel="noreferrer" className="social-icon-btn whatsapp" title="WhatsApp Business">
+                <a href="https://wa.me/918799036132" target="_blank" rel="noreferrer" className="social-icon-btn whatsapp" title="WhatsApp (+91 87990 36132)">
                   <MessageSquare size={16} />
                 </a>
-                <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="social-icon-btn linkedin" title="LinkedIn">
-                  <Globe size={16} />
+                <a href="https://www.instagram.com/brizaiwebstudio/" target="_blank" rel="noreferrer" className="social-icon-btn instagram" title="Instagram (@brizaiwebstudio)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                  </svg>
                 </a>
-                <a href="https://brizpatel.online" target="_blank" rel="noreferrer" className="social-icon-btn portfolio" title="Briz AI Studio">
-                  <Sparkles size={16} />
+                <a href="https://www.facebook.com/profile.php?id=61594731526115" target="_blank" rel="noreferrer" className="social-icon-btn facebook" title="Facebook (Briz AiWeb Studio)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                  </svg>
+                </a>
+                <a href="https://brizpatel.online" target="_blank" rel="noreferrer" className="social-icon-btn portfolio" title="Official Website (brizpatel.online)">
+                  <Globe size={16} />
                 </a>
               </div>
             </div>
@@ -546,7 +555,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
           {/* Column 4: Contact Info */}
           <div className="footer-col footer-col-contact">
             <h4 className="footer-col-title">Contact Info</h4>
-            <div className="footer-company-legal">Briz AI Studio (Briz Patel)</div>
+            <div className="footer-company-legal">Briz AiWeb Studio (Briz Patel)</div>
 
             <div className="footer-contact-item">
               <MapPin size={16} className="contact-icon" />

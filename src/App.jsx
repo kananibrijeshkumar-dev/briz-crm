@@ -612,7 +612,7 @@ export default function App() {
                     name: "Briz Patel (Super Admin)",
                     email: "briz@brizpatel.online",
                     role: "super_admin",
-                    company: "Briz AI Studio",
+                    company: "Briz AiWeb Studio",
                     repName: "All Representatives (Admin View)"
                   });
                   setIsAuthenticated(true);
@@ -1925,7 +1925,7 @@ export default function App() {
             <div className="view-header">
               <div>
                 <h1 className="view-title">Client Workspaces & SaaS Onboarding</h1>
-                <p className="view-subtitle">How Briz AI Studio onboards and manages multiple manufacturing clients with dedicated portals</p>
+                <p className="view-subtitle">How Briz AiWeb Studio onboards and manages multiple manufacturing clients with dedicated portals</p>
               </div>
               <div className="view-actions">
                 <button className="btn-primary" onClick={() => setShowOnboardModal(true)}>
