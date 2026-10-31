@@ -24,20 +24,20 @@ export default function App() {
       } catch (e) {}
     }
     return {
-      name: "Rohit Panchal",
-      email: "brizpatel13@gmail.com",
-      role: "client_admin",
-      company: "rohit clothing house",
+      name: "Briz Patel",
+      email: "briz@brizpatel.online",
+      role: "super_admin",
+      company: "Briz AiWeb Studio",
       repName: "All Representatives (Admin View)"
     };
   });
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window !== "undefined") {
       const savedAuth = localStorage.getItem("briz_crm_is_auth");
-      if (savedAuth !== null) return savedAuth === "true";
-      return Boolean(localStorage.getItem("briz_crm_current_user"));
+      const savedUser = localStorage.getItem("briz_crm_current_user");
+      if (savedAuth !== null) return savedAuth === "true" && Boolean(savedUser);
     }
-    return true;
+    return false; // Fresh visitors are not auto-logged in!
   });
   const [loginInput, setLoginInput] = useState("briz@brizpatel.online");
   const [loginPasswordInput, setLoginPasswordInput] = useState("Briz@Admin2026");
@@ -61,22 +61,43 @@ export default function App() {
   // View Mode: 'landing' (Public SaaS Website) or 'app' (CRM Workstation)
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window !== "undefined") {
-      if (window.location.search.includes("mode=app")) return "app";
       if (window.location.search.includes("mode=landing")) return "landing";
-      const savedMode = localStorage.getItem("briz_crm_view_mode");
-      if (savedMode) return savedMode;
-      // Default to app workstation so refresh keeps user in CRM!
-      return "app";
+      if (window.location.search.includes("mode=app") || window.location.hash === "#app") return "app";
+      const savedAuth = localStorage.getItem("briz_crm_is_auth");
+      const savedUser = localStorage.getItem("briz_crm_current_user");
+      // If user has an active session on this device, keep them in app!
+      if (savedAuth === "true" && savedUser) return "app";
     }
-    return "app";
+    // New computers/visitors always land on the clean public website!
+    return "landing";
   });
 
-  const switchViewMode = (mode) => {
+  const switchViewMode = (mode, pushHistory = true) => {
     setViewMode(mode);
     if (typeof window !== "undefined") {
       localStorage.setItem("briz_crm_view_mode", mode);
+      if (pushHistory) {
+        if (mode === "app") {
+          window.history.pushState({ mode: "app" }, "", "#app");
+        } else {
+          window.history.pushState({ mode: "landing" }, "", window.location.pathname);
+        }
+      }
     }
   };
+
+  // Browser Back/Forward Button Navigation Support
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (window.location.hash === "#app" || (e.state && e.state.mode === "app")) {
+        setViewMode("app");
+      } else {
+        setViewMode("landing");
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
 
   // App Navigation
