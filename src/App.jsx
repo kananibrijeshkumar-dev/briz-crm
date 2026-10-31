@@ -534,16 +534,18 @@ export default function App() {
   // Cashfree Client Onboarding Handler
   const handleRegisterClient = async (clientData) => {
     const compName = clientData.companyName || "My Business Workspace";
-    setActiveClient(compName);
-    setIsAuthenticated(true);
-    setUserRole("client_admin");
     const newAdminUser = {
       name: (clientData.ownerName || "Owner") + " (Admin)",
+      email: clientData.email || (clientData.whatsapp + "@crm.online"),
       phone: clientData.whatsapp || "+91 98988 60145",
       company: compName,
-      role: "client_admin"
+      role: "client_admin",
+      repName: "All Representatives (Admin View)"
     };
-    setCurrentUser(newAdminUser);
+    setUser(newAdminUser);
+    setActiveClient(compName);
+    setSelectedRep("All Representatives (Admin View)");
+    setIsAuthenticated(true);
     
     setTenantsList(prev => {
       if (prev.find(c => c.name.toLowerCase() === compName.toLowerCase())) return prev;
@@ -714,7 +716,7 @@ export default function App() {
                   </div>
 
                   <div className="form-group">
-                    <label>Work Email Address</label>
+                    <label>Work Email Address (Optional)</label>
                     <input 
                       type="email" 
                       value={signUpForm.email} 
@@ -815,12 +817,12 @@ export default function App() {
               setLoginError("Invalid Mobile Number or Password. Access Denied.");
             }}>
               <div className="form-group">
-                <label>Login ID (Mobile Number or Work Email)</label>
+                <label>Login with Mobile Number (or Email)</label>
                 <input 
                   type="text" 
                   value={loginInput} 
                   onChange={(e) => setLoginInput(e.target.value)}
-                  placeholder="+91 97239 28746 or email..." 
+                  placeholder="Enter 10-digit mobile number..." 
                   className="login-input"
                   required 
                 />

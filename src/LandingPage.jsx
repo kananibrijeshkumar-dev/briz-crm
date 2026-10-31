@@ -781,7 +781,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
                     <div>
                       <input
                         type="email"
-                        placeholder="Work Email Address"
+                        placeholder="Work Email Address (Optional)"
                         className="checkout-input"
                         value={checkoutForm.email}
                         onChange={(e) => setCheckoutForm({ ...checkoutForm, email: e.target.value })}
