@@ -51,6 +51,12 @@ export default function App() {
     email: "",
     password: ""
   });
+  // WhatsApp OTP Verification State
+  const [otpStep, setOtpStep] = useState("form"); // "form" or "verify"
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [enteredOtp, setEnteredOtp] = useState("");
+  const [otpTimer, setOtpTimer] = useState(45);
+  const [otpSending, setOtpSending] = useState(false);
 
   // View Mode: 'landing' (Public SaaS Website) or 'app' (CRM Workstation)
   const [viewMode, setViewMode] = useState(() => {
@@ -529,6 +535,62 @@ export default function App() {
   // -------------------------------------------------------------
   // LOGIN SCREEN
   // -------------------------------------------------------------
+  // OTP Countdown Timer
+  useEffect(() => {
+    let interval = null;
+    if (otpStep === "verify" && otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [otpStep, otpTimer]);
+
+  // Generate & Send WhatsApp OTP
+  const handleSendWhatsAppOtp = (e) => {
+    e.preventDefault();
+    setLoginError("");
+    if (!signUpForm.companyName.trim()) {
+      setLoginError("Please enter your Company or Business Name.");
+      return;
+    }
+    const cleanDigits = (signUpForm.whatsapp || "").replace(/[^0-9]/g, "");
+    if (cleanDigits.length < 10) {
+      setLoginError("Please enter a valid 10-digit WhatsApp number.");
+      return;
+    }
+
+    setOtpSending(true);
+    const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    setGeneratedOtp(newOtp);
+    setEnteredOtp("");
+    setOtpTimer(45);
+
+    setTimeout(() => {
+      setOtpSending(false);
+      setOtpStep("verify");
+      // Open WhatsApp direct message link if popup allowed
+      const targetPhone = cleanDigits.startsWith("91") ? cleanDigits : `91${cleanDigits.slice(-10)}`;
+      const waMsg = encodeURIComponent(`*BrizCRM Verification Code:* ${newOtp}\n\nUse this 4-digit OTP to activate your 14-day free workspace for ${signUpForm.companyName}. Valid for 5 minutes.`);
+      try {
+        window.open(`https://wa.me/${targetPhone}?text=${waMsg}`, "_blank");
+      } catch (err) {}
+    }, 600);
+  };
+
+  // Verify OTP and complete signup
+  const handleVerifyOtpAndSubmit = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    if (enteredOtp.trim() !== generatedOtp.trim()) {
+      setLoginError("Incorrect OTP code. Please enter the 4 digits sent to your WhatsApp.");
+      return;
+    }
+    // Correct OTP! Call signup submission
+    await handleSignUpSubmit(e);
+    setOtpStep("form");
+  };
+
   // Free Account Registration Handler (Zero upfront payment required)
   const handleSignUpSubmit = async (e) => {
     e.preventDefault();
