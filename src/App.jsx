@@ -16,14 +16,29 @@ import "./App.css";
 
 export default function App() {
   // Authentication State
-  const [user, setUser] = useState({
-    name: "Briz Patel",
-    email: "briz@brizpatel.online",
-    role: "super_admin",
-    company: "Briz AiWeb Studio",
-    repName: "All Representatives (Admin View)"
+  const [user, setUser] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("briz_crm_current_user");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return {
+      name: "Rohit Panchal",
+      email: "brizpatel13@gmail.com",
+      role: "client_admin",
+      company: "rohit clothing house",
+      repName: "All Representatives (Admin View)"
+    };
   });
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedAuth = localStorage.getItem("briz_crm_is_auth");
+      if (savedAuth !== null) return savedAuth === "true";
+      return Boolean(localStorage.getItem("briz_crm_current_user"));
+    }
+    return true;
+  });
   const [loginInput, setLoginInput] = useState("briz@brizpatel.online");
   const [loginPasswordInput, setLoginPasswordInput] = useState("Briz@Admin2026");
   const [loginError, setLoginError] = useState("");
@@ -39,9 +54,15 @@ export default function App() {
 
   // View Mode: 'landing' (Public SaaS Website) or 'app' (CRM Workstation)
   const [viewMode, setViewMode] = useState(() => {
-    if (typeof window !== "undefined" && window.location.search.includes("mode=app")) return "app";
-    if (typeof window !== "undefined" && window.location.search.includes("mode=landing")) return "landing";
-    return "landing";
+    if (typeof window !== "undefined") {
+      if (window.location.search.includes("mode=app")) return "app";
+      if (window.location.search.includes("mode=landing")) return "landing";
+      const savedMode = localStorage.getItem("briz_crm_view_mode");
+      if (savedMode) return savedMode;
+      // Default to app workstation so refresh keeps user in CRM!
+      return "app";
+    }
+    return "app";
   });
 
   const switchViewMode = (mode) => {
@@ -54,7 +75,18 @@ export default function App() {
 
   // App Navigation
   const [activeTab, setActiveTab] = useState("leads");
-  const [activeClient, setActiveClient] = useState("Briz AiWeb Studio");
+  const [activeClient, setActiveClient] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("briz_crm_current_user");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.company) return parsed.company;
+        }
+      } catch (e) {}
+    }
+    return "rohit clothing house";
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Data State
@@ -1174,7 +1206,14 @@ export default function App() {
           <button 
             className="logout-button" 
             title="Log Out"
-            onClick={() => setIsAuthenticated(false)}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("briz_crm_is_auth");
+                localStorage.removeItem("briz_crm_current_user");
+                localStorage.setItem("briz_crm_view_mode", "app");
+              }
+              setIsAuthenticated(false);
+            }}
           >
             <LogOut size={16} />
             {!sidebarCollapsed && <span>Sign Out</span>}

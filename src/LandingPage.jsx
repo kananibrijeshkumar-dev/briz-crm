@@ -216,35 +216,35 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
                 <div className="mini-col-title">📥 New Inquiries (2)</div>
                 <div className="mini-card-sample">
                   <div className="mini-card-name">Haresh Thakor</div>
-                  <div className="mini-card-val">Double Chamber 7.5 HP</div>
+                  <div className="mini-card-val">Enterprise Business Contract</div>
                 </div>
               </div>
               <div className="mini-col">
                 <div className="mini-col-title">💬 Contacted (2)</div>
                 <div className="mini-card-sample">
                   <div className="mini-card-name">Kamal Gupta</div>
-                  <div className="mini-card-val">5 HP Atta Chakki</div>
+                  <div className="mini-card-val">Custom Service Package</div>
                 </div>
               </div>
               <div className="mini-col">
                 <div className="mini-col-title">📄 Quote Shared (3)</div>
                 <div className="mini-card-sample">
                   <div className="mini-card-name">Abdul Chitrakoot</div>
-                  <div className="mini-card-val">₹1,45,000 (Cyclone)</div>
+                  <div className="mini-card-val">₹1,45,000 (Proposal Shared)</div>
                 </div>
               </div>
               <div className="mini-col">
-                <div className="mini-col-title">🏭 Factory Demo (1)</div>
+                <div className="mini-col-title">🤝 Product Demo / Review (1)</div>
                 <div className="mini-card-sample">
                   <div className="mini-card-name">Subhashish Kumar</div>
-                  <div className="mini-card-val">₹68,000 (Live Demo)</div>
+                  <div className="mini-card-val">₹68,000 (Demo Scheduled)</div>
                 </div>
               </div>
               <div className="mini-col">
                 <div className="mini-col-title">🏆 Won / Paid (2)</div>
                 <div className="mini-card-sample">
-                  <div className="mini-card-name">Harendra Kumar</div>
-                  <div className="mini-card-val">₹95,000 Advance Paid</div>
+                  <div className="mini-card-name">Rahul Verma</div>
+                  <div className="mini-card-val">₹95,000 Deal Closed</div>
                 </div>
               </div>
             </div>
