@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { supabase } from "./supabase";
-import { INITIAL_LEADS, SALES_REPS, CLIENT_TENANTS, MACHINE_PRESETS, ADMIN_USERS } from "./data";
+import { INITIAL_LEADS, SALES_REPS, CLIENT_TENANTS, DEFAULT_PRODUCT_CATALOG, ADMIN_USERS } from "./data";
 import "./App.css";
 
 export default function App() {
@@ -20,12 +20,12 @@ export default function App() {
     name: "Briz Patel",
     email: "briz@brizpatel.online",
     role: "super_admin",
-    company: "Jay Shree Ambe Food Machinery",
+    company: "Briz AiWeb Studio",
     repName: "All Representatives (Admin View)"
   });
   const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [loginInput, setLoginInput] = useState("owner@jayambefoodmachinery.com");
-  const [loginPasswordInput, setLoginPasswordInput] = useState("Ambe@Owner2026");
+  const [loginInput, setLoginInput] = useState("briz@brizpatel.online");
+  const [loginPasswordInput, setLoginPasswordInput] = useState("Briz@Admin2026");
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authTab, setAuthTab] = useState("signin"); // "signin" or "signup"
@@ -54,7 +54,7 @@ export default function App() {
 
   // App Navigation
   const [activeTab, setActiveTab] = useState("leads");
-  const [activeClient, setActiveClient] = useState("Jay Shree Ambe Food Machinery");
+  const [activeClient, setActiveClient] = useState("Briz AiWeb Studio");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Data State
@@ -94,11 +94,12 @@ export default function App() {
   const [quoteLead, setQuoteLead] = useState(null);
 
   // Quotation Builder State
-  const [selectedMachine, setSelectedMachine] = useState(MACHINE_PRESETS[4]);
+  const [quoteItem, setQuoteItem] = useState("Standard Commercial Package");
+  const [quoteSpec, setQuoteSpec] = useState("Standard Business Specification");
   const [quoteCustomer, setQuoteCustomer] = useState("");
   const [quotePhone, setQuotePhone] = useState("");
-  const [customPrice, setCustomPrice] = useState(MACHINE_PRESETS[4].basePrice);
-  const [quoteLanguage, setQuoteLanguage] = useState("hindi");
+  const [customPrice, setCustomPrice] = useState(25000);
+  const [quoteLanguage, setQuoteLanguage] = useState("english");
   const [copiedNotification, setCopiedNotification] = useState(false);
 
   // New Lead Form State
@@ -107,9 +108,9 @@ export default function App() {
     phone: "",
     city: "",
     state: "Gujarat",
-    requirement: "10 HP Double Stage Pulverizer with Cyclone",
-    deal_value: 125000,
-    assigned_rep: "Anilbhai",
+    requirement: "",
+    deal_value: "",
+    assigned_rep: "Direct / Admin",
     notes: ""
   });
 
@@ -143,7 +144,7 @@ export default function App() {
             }
             return {
               ...row,
-              company: row.company_name || row.company || "Jay Shree Ambe Food Machinery",
+              company: row.company_name || row.company || activeClient,
               followup_date: fDate,
               followup_time: fTime,
               followup_note: fNote
@@ -201,13 +202,13 @@ export default function App() {
   // Count Active Follow-Ups for Sidebar Alert Badge
   const dueRemindersCount = leads.filter(l => {
     const status = getLeadReminderStatus(l);
-    const matchComp = (l.company || l.company_name || "Jay Shree Ambe Food Machinery") === activeClient;
+    const matchComp = (l.company || l.company_name || activeClient) === activeClient;
     return matchComp && (status === "overdue" || status === "today") && l.stage !== "won" && l.stage !== "lost";
   }).length;
 
   // Filter Leads (Strict Client Workspace Separation + Month/Year + Reminders)
   const filteredLeads = leads.filter(lead => {
-    const leadComp = lead.company || lead.company_name || "Jay Shree Ambe Food Machinery";
+    const leadComp = lead.company || lead.company_name || activeClient;
     const matchCompany = leadComp === activeClient;
     const matchRep = (selectedRep === "All Representatives (Admin View)") || (lead.assigned_rep === selectedRep);
     const matchStage = stageFilter === "all" || lead.stage === stageFilter;
@@ -417,9 +418,9 @@ export default function App() {
       phone: "",
       city: "",
       state: "Gujarat",
-      requirement: "10 HP Double Stage Pulverizer with Cyclone",
-      deal_value: 125000,
-      assigned_rep: "Anilbhai",
+      requirement: "",
+      deal_value: "",
+      assigned_rep: "Direct / Admin",
       notes: ""
     });
     try {
@@ -456,12 +457,20 @@ export default function App() {
   const gst = Math.round(base * 0.18);
   const total = base + gst;
 
-  // Format WhatsApp Quotation Text
+  // Format Universal WhatsApp Quotation Text
   const getQuotationText = () => {
+    const compName = activeClient || user?.company || "Our Company";
+    const item = quoteItem || "Product / Service";
+    const spec = quoteSpec ? `\n📋 Details: ${quoteSpec}` : "";
+    const contact = user?.phone || "+91 87990 36132";
+
     if (quoteLanguage === "gujarati") {
-      return `નમસ્તે શ્રી ${quoteCustomer || "ગ્રાહક"},\n\nજય શ્રી અંબે ફૂડ મશીનરી (અમદાવાદ) તરફથી આપનું ક્વોટેશન:\n\n⚙️ મશીન: ${selectedMachine.name}\n⚡ મોટર: ${selectedMachine.hp}\n💰 બેઝ પ્રાઈઝ: ₹${base.toLocaleString("en-IN")}\n📊 GST (18%): ₹${gst.toLocaleString("en-IN")}\n🔥 કુલ રકમ (GST સહિત): ₹${total.toLocaleString("en-IN")}\n\n✅ હેવી ડ્યુટી MS બોડી\n✅ 1 વર્ષની વૉરંટી અને લાઈવ ડેમો સુવિધા\n\nફેક્ટરી મુલાકાત માટે સંપર્ક: +91 98988 60145\nજય અંબે ફૂડ મશીનરી - અમદાવાદ`;
+      return `નમસ્તે શ્રી ${quoteCustomer || "ગ્રાહક"},\n\n${compName} તરફથી આપનું સત્તાવાર ક્વોટેશન:\n\n📦 પ્રોડક્ટ / સેવા: ${item}${spec}\n💰 બેઝ રકમ: ₹${base.toLocaleString("en-IN")}\n📊 GST (18%): ₹${gst.toLocaleString("en-IN")}\n🔥 કુલ રકમ (GST સહિત): ₹${total.toLocaleString("en-IN")}\n\n✅ 100% ગુણવત્તાની ખાતરી\n✅ તાત્કાલિક ડિલિવરી અને સહાય ઉપલબ્ધ\n\nસંપર્ક: ${contact}\n${compName}`;
     }
-    return `Namaste Shri ${quoteCustomer || "Customer"},\n\nOfficial Quotation from Jay Shree Ambe Food Machinery (Ahmedabad):\n\n⚙️ Model: ${selectedMachine.name}\n⚡ Motor: ${selectedMachine.hp}\n💰 Base Price: ₹${base.toLocaleString("en-IN")}\n📊 GST (18%): ₹${gst.toLocaleString("en-IN")}\n🔥 Total Net Amount: ₹${total.toLocaleString("en-IN")}\n\n✅ 1 Year Warranty & Live Demonstration\n✅ Immediate Factory Dispatch Available\n\nContact Factory: +91 98988 60145\nWebsite: jayambefoodmachinery.com`;
+    if (quoteLanguage === "hindi") {
+      return `नमस्ते श्री ${quoteCustomer || "जी"},\n\n${compName} की तरफ से आपका ऑफिशियल कोटेशन:\n\n📦 आइटम / सर्विस: ${item}${spec}\n💰 बेस अमाउंट: ₹${base.toLocaleString("en-IN")}\n📊 GST (18%): ₹${gst.toLocaleString("en-IN")}\n🔥 कुल राशि (GST सहित): ₹${total.toLocaleString("en-IN")}\n\n✅ 100% क्वालिटी गारंटी\n✅ तुरंत डिलीवरी एवं फुल सपोर्ट उपलब्ध\n\nसंपर्क: ${contact}\n${compName}`;
+    }
+    return `Hello ${quoteCustomer || "Customer"},\n\nOfficial Quotation from ${compName}:\n\n📦 Item / Service: ${item}${spec}\n💰 Base Price: ₹${base.toLocaleString("en-IN")}\n📊 GST (18%): ₹${gst.toLocaleString("en-IN")}\n🔥 Total Amount (incl. 18% GST): ₹${total.toLocaleString("en-IN")}\n\n✅ 100% Quality Assurance\n✅ Prompt Delivery & Customer Support\n\nContact: ${contact}\n${compName}`;
   };
 
   const copyQuotation = () => {
@@ -813,10 +822,10 @@ export default function App() {
                   name: matchedRep.name,
                   email: `${matchedRep.name.toLowerCase()}@${(matchedRep.company || "crm").replace(/[^a-z0-9]/g, "").toLowerCase()}.com`,
                   role: "sales_rep",
-                  company: matchedRep.company || "Jay Shree Ambe Food Machinery",
+                  company: matchedRep.company || "My Company",
                   repName: matchedRep.name
                 });
-                setActiveClient(matchedRep.company || "Jay Shree Ambe Food Machinery");
+                setActiveClient(matchedRep.company || "My Company");
                 setSelectedRep(matchedRep.name);
                 setIsAuthenticated(true);
                 return;
@@ -877,7 +886,7 @@ export default function App() {
               <span>OR 1-CLICK QUICK ACCESS FOR CLIENT DEMO</span>
             </div>
 
-            <div className="quick-access-grid">
+            <div className="quick-access-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
               <button 
                 type="button"
                 className="quick-role-btn super-admin"
@@ -889,48 +898,12 @@ export default function App() {
                     company: "Briz AiWeb Studio",
                     repName: "All Representatives (Admin View)"
                   });
+                  setActiveClient("Briz AiWeb Studio");
                   setIsAuthenticated(true);
                 }}
               >
                 <div className="role-top"><ShieldCheck size={16} /> <strong>Super Admin (Briz AI)</strong></div>
-                <div className="role-sub">Full access, multi-client switcher, billing</div>
-              </button>
-
-              <button 
-                type="button"
-                className="quick-role-btn client-owner"
-                onClick={() => {
-                  setUser({
-                    name: "Jay Ambe Owner (Admin)",
-                    email: "owner@jayambefoodmachinery.com",
-                    role: "client_admin",
-                    company: "Jay Shree Ambe Food Machinery",
-                    repName: "All Representatives (Admin View)"
-                  });
-                  setIsAuthenticated(true);
-                }}
-              >
-                <div className="role-top"><Building2 size={16} /> <strong>Client Owner (Jay Ambe)</strong></div>
-                <div className="role-sub">Company dashboard, all 9 sales reps, full pipeline</div>
-              </button>
-
-              <button 
-                type="button"
-                className="quick-role-btn sales-rep"
-                onClick={() => {
-                  setUser({
-                    name: "Mukeshbhai",
-                    email: "mukesh@jayambefoodmachinery.com",
-                    role: "sales_rep",
-                    company: "Jay Shree Ambe Food Machinery",
-                    repName: "Mukeshbhai"
-                  });
-                  setSelectedRep("Mukeshbhai");
-                  setIsAuthenticated(true);
-                }}
-              >
-                <div className="role-top"><Users size={16} /> <strong>Sales Rep (Mukeshbhai)</strong></div>
-                <div className="role-sub">Rep view: assigned leads, quick WhatsApp quotes</div>
+                <div className="role-sub">Master portal, company switcher, billing</div>
               </button>
 
               <button 
@@ -938,18 +911,18 @@ export default function App() {
                 className="quick-role-btn pitch-demo"
                 onClick={() => {
                   setUser({
-                    name: "Prospective Buyer (Live Demo)",
-                    email: "buyer@newfactory.in",
+                    name: "Business Owner (Pro Demo)",
+                    email: "owner@mybusiness.com",
                     role: "client_admin",
-                    company: "Gujarat Spices & Agro",
+                    company: "My Business (Demo Workspace)",
                     repName: "All Representatives (Admin View)"
                   });
-                  setActiveClient("Gujarat Agro Mills & Spices");
+                  setActiveClient("My Business (Demo Workspace)");
                   setIsAuthenticated(true);
                 }}
               >
-                <div className="role-top"><Sparkles size={16} /> <strong>Interactive Client Demo</strong></div>
-                <div className="role-sub">Pitch mode for new clients to test features</div>
+                <div className="role-top"><Sparkles size={16} /> <strong>Live Interactive Demo</strong></div>
+                <div className="role-sub">Clean 14-day Pro workspace for testing</div>
               </button>
             </div>
           </div>
@@ -1297,7 +1270,7 @@ export default function App() {
                     { id: "new", name: "New WhatsApp Inquiries", color: "#3b82f6" },
                     { id: "contacted", name: "Contacted / Exploring", color: "#06b6d4" },
                     { id: "quotation", name: "Quotation Shared", color: "#f59e0b" },
-                    { id: "demo", name: "Factory Demo / Visit", color: "#a855f7" },
+                    { id: "demo", name: "Meeting / Demo / Follow-Up", color: "#a855f7" },
                     { id: "won", name: "Deal Won / Advance Paid", color: "#10b981" }
                   ].map(s => {
                     const count = leads.filter(l => l.stage === s.id).length;
@@ -1353,7 +1326,7 @@ export default function App() {
             <div className="view-header">
               <div>
                 <h1 className="view-title">Master Leads Database (Data List)</h1>
-                <p className="view-subtitle">Showing active inquiries for <strong>{activeClient}</strong> ({filteredLeads.length} leads). Switch workspace in the top bar to toggle between Jay Shree Ambe and MNP Holidays.</p>
+                <p className="view-subtitle">Showing active customer inquiries for <strong>{activeClient}</strong> ({filteredLeads.length} leads). Manage leads, track follow-ups, and trigger 1-click WhatsApp outreach.</p>
               </div>
               <div className="view-actions">
                 <button className="btn-secondary" onClick={exportToCSV}>
@@ -1378,7 +1351,7 @@ export default function App() {
                   <option value="new">New Inquiries</option>
                   <option value="contacted">Contacted / Exploring</option>
                   <option value="quotation">Quotation Shared</option>
-                  <option value="demo">Factory Demo / Visit</option>
+                  <option value="demo">Meeting / Demo / Follow-Up</option>
                   <option value="won">Deal Won</option>
                 </select>
               </div>
@@ -1424,7 +1397,7 @@ export default function App() {
                   className="filter-select"
                 >
                   <option value="All Representatives (Admin View)">All Sales Desks</option>
-                  {SALES_REPS.filter(r => (r.company || "Jay Shree Ambe Food Machinery") === activeClient).map(r => (
+                  {repsList.filter(r => !r.company || r.company === activeClient).map((r, idx) => (
                     <option key={r.id} value={r.name}>{r.name}</option>
                   ))}
                 </select>
@@ -1442,7 +1415,7 @@ export default function App() {
                     <th>Customer & Date/Time</th>
                     <th>Phone / WhatsApp</th>
                     <th>Location</th>
-                    <th>{activeClient === "MNP Holidays" ? "Tour Package / Destination" : "Machine Requirement"}</th>
+                    <th>Product / Service Requirement</th>
                     <th>Deal Value</th>
                     <th>Current Stage</th>
                     <th>⏰ Next Follow-Up</th>
@@ -1517,7 +1490,7 @@ export default function App() {
                           {lead.stage === "new" && "📥 New Inquiry"}
                           {lead.stage === "contacted" && "💬 Contacted"}
                           {lead.stage === "quotation" && "📄 Quote Shared"}
-                          {lead.stage === "demo" && "🏭 Factory Demo"}
+                          {lead.stage === "demo" && "🤝 Meeting / Demo"}
                           {lead.stage === "won" && "🏆 Deal Won"}
                         </span>
                       </td>
@@ -1643,8 +1616,8 @@ export default function App() {
                 { id: "new", title: "New Inquiries", icon: "📥", color: "blue" },
                 { id: "contacted", title: "Contacted / Exploring", icon: "💬", color: "cyan" },
                 { id: "quotation", title: "Quotation Shared", icon: "📄", color: "amber" },
-                { id: "demo", title: "Factory Demo / Visit", icon: "🏭", color: "purple" },
-                { id: "won", title: "Deal Won / Advance Paid", icon: "🏆", color: "emerald" }
+                { id: "demo", title: "Meeting / Demo / Follow-Up", icon: "🤝", color: "purple" },
+                { id: "won", title: "Deal Won / Closed", icon: "🏆", color: "emerald" }
               ].map(col => {
                 const colLeads = filteredLeads.filter(l => l.stage === col.id);
                 const colSum = colLeads.reduce((s, l) => s + Number(l.deal_value || 0), 0);
@@ -1851,7 +1824,7 @@ export default function App() {
                             <Phone size={13} /> Call
                           </a>
                           <a 
-                            href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Namaste ${lead.customer_name} ji, Jay Shree Ambe Food Machinery se follow-up call/message regarding your inquiry for ${lead.requirement}. Kya aaj baat ho sakti hai?`)}`}
+                            href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Namaste ${lead.customer_name} ji, follow-up from ${activeClient || user?.company || "our team"} regarding your inquiry for ${lead.requirement}. Would you be free for a quick call today?`)}`}
                             target="_blank"
                             rel="noreferrer"
                             className="btn-reminder-action wa"
@@ -1915,7 +1888,7 @@ export default function App() {
                             <Phone size={13} /> Call
                           </a>
                           <a 
-                            href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Namaste ${lead.customer_name} ji, Jay Shree Ambe Food Machinery se scheduled follow-up. Aapne ${lead.requirement} ke liye baat karni thi.`)}`}
+                            href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Namaste ${lead.customer_name} ji, scheduled follow-up from ${activeClient || user?.company || "our team"} regarding ${lead.requirement}.`)}`}
                             target="_blank"
                             rel="noreferrer"
                             className="btn-reminder-action wa"
@@ -2040,30 +2013,34 @@ export default function App() {
                 </div>
 
                 <div className="form-group">
-                  <label>Select Machine Model</label>
-                  <select 
-                    value={selectedMachine.name}
-                    onChange={(e) => {
-                      const m = MACHINE_PRESETS.find(p => p.name === e.target.value);
-                      if (m) {
-                        setSelectedMachine(m);
-                        setCustomPrice(m.basePrice);
-                      }
-                    }}
-                    className="crm-select"
-                  >
-                    {MACHINE_PRESETS.map((m, idx) => (
-                      <option key={idx} value={m.name}>{m.name} ({m.hp})</option>
-                    ))}
-                  </select>
+                  <label>Product / Service / Item Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Standard Commercial Package, Service Contract, Wholesale Supply..." 
+                    value={quoteItem} 
+                    onChange={(e) => setQuoteItem(e.target.value)}
+                    className="crm-input"
+                  />
                 </div>
 
                 <div className="form-group">
-                  <label>Base Machine Price (₹)</label>
+                  <label>Specification / Package Details</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Turnkey Delivery / 1 Year Warranty / Full Support" 
+                    value={quoteSpec} 
+                    onChange={(e) => setQuoteSpec(e.target.value)}
+                    className="crm-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Base Amount / Price (₹)</label>
                   <input 
                     type="number" 
+                    placeholder="e.g. 25000"
                     value={customPrice} 
-                    onChange={(e) => setCustomPrice(e.target.value)}
+                    onChange={(e) => setCustomPrice(Number(e.target.value))}
                     className="crm-input"
                   />
                 </div>
@@ -2153,7 +2130,22 @@ export default function App() {
             </div>
 
             <div className="team-cards-grid">
-              {repsList.filter(r => (r.company || "Jay Shree Ambe Food Machinery") === activeClient).map((rep) => (
+              {repsList.filter(r => !r.company || r.company === activeClient).length === 0 ? (
+                <div className="empty-state-card" style={{ gridColumn: "1 / -1", padding: "40px 20px", textAlign: "center" }}>
+                  <Users size={36} style={{ color: "#64748b", margin: "0 auto 12px" }} />
+                  <h3 style={{ color: "#f8fafc", fontSize: "16px", marginBottom: "6px" }}>No Sales Representatives Added Yet</h3>
+                  <p style={{ color: "#94a3b8", fontSize: "13px", maxWidth: "450px", margin: "0 auto 16px" }}>
+                    Add your team members to assign incoming customer leads, track response times, and provide individual login access.
+                  </p>
+                  <button className="btn-primary" onClick={() => {
+                    setNewRepForm({ ...newRepForm, company: activeClient });
+                    setShowAddRepModal(true);
+                  }}>
+                    <Plus size={15} /> + Add Your First Sales Rep
+                  </button>
+                </div>
+              ) : (
+                repsList.filter(r => !r.company || r.company === activeClient).map((rep) => (
                 <div key={rep.id} className="team-rep-card">
                   <div className="rep-card-top">
                     <div className="rep-big-avatar">{rep.name.charAt(0)}</div>
@@ -2193,7 +2185,7 @@ export default function App() {
                     <span className="speed-tag">⚡ Response Rate: {rep.rate}</span>
                     <div className="rep-footer-buttons">
                       <a 
-                        href={`https://wa.me/${rep.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("નમસ્તે " + rep.name + ", BrizCRM માં આપનું એકાઉન્ટ એક્ટિવ છે. Login: https://crm.brizpatel.online/login (Mobile: " + rep.phone + ")")}`} 
+                        href={`https://wa.me/${rep.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Hello " + rep.name + ", your BrizCRM login access is active. Portal: https://crm.brizpatel.online (Mobile: " + rep.phone + ")")}`} 
                         target="_blank" 
                         rel="noreferrer"
                         className="btn-invite-wa"
@@ -2202,7 +2194,7 @@ export default function App() {
                         <Send size={13} /> Send Login Details
                       </a>
                       <a 
-                        href={`https://wa.me/${rep.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("નમસ્તે " + rep.name + ", BrizCRM તરફથી આપના આજના નવા લીડ્સ ચેક કરો.")}`} 
+                        href={`https://wa.me/${rep.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Hello " + rep.name + ", please check your assigned customer leads on BrizCRM.")}`} 
                         target="_blank" 
                         rel="noreferrer"
                         className="dispatch-wa-btn"
@@ -2212,7 +2204,8 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+            )}
             </div>
           </div>
         )}
@@ -2223,7 +2216,7 @@ export default function App() {
             <div className="view-header">
               <div>
                 <h1 className="view-title">Client Workspaces & SaaS Onboarding</h1>
-                <p className="view-subtitle">How Briz AiWeb Studio onboards and manages multiple manufacturing clients with dedicated portals</p>
+                <p className="view-subtitle">Manage multiple business client workspaces, branch divisions, and subscriber accounts from one master command center</p>
               </div>
               <div className="view-actions">
                 <button className="btn-primary" onClick={() => setShowOnboardModal(true)}>
@@ -2429,7 +2422,7 @@ export default function App() {
               <div className="drawer-section">
                 <h4 className="section-title">Inquiry Specifications</h4>
                 <div className="spec-row">
-                  <span className="spec-label">Machine Requirement:</span>
+                  <span className="spec-label">Requirement:</span>
                   <span className="spec-value">{activeLeadDrawer.requirement}</span>
                 </div>
                 <div className="spec-row">
@@ -2642,16 +2635,15 @@ export default function App() {
               </div>
 
               <div className="form-group">
-                <label>Machine Requirement</label>
-                <select 
+                <label>Product / Service Requirement</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Software Package, Wholesale Goods, Industrial Supply, Tour Package..." 
                   value={newLeadForm.requirement}
                   onChange={(e) => setNewLeadForm({ ...newLeadForm, requirement: e.target.value })}
-                  className="crm-select"
-                >
-                  {MACHINE_PRESETS.map((m, i) => (
-                    <option key={i} value={m.name}>{m.name}</option>
-                  ))}
-                </select>
+                  className="crm-input"
+                  required
+                />
               </div>
 
               <div className="form-row">
@@ -2659,6 +2651,7 @@ export default function App() {
                   <label>Deal Value (₹)</label>
                   <input 
                     type="number" 
+                    placeholder="e.g. 50000"
                     value={newLeadForm.deal_value}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, deal_value: Number(e.target.value) })}
                     className="crm-input"
@@ -2671,8 +2664,9 @@ export default function App() {
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, assigned_rep: e.target.value })}
                     className="crm-select"
                   >
-                    {SALES_REPS.map(r => (
-                      <option key={r.id} value={r.name}>{r.name}</option>
+                    <option value="Direct / Admin">Direct / Admin</option>
+                    {repsList.filter(r => !r.company || r.company === activeClient).map((r, idx) => (
+                      <option key={idx} value={r.name}>{r.name}</option>
                     ))}
                   </select>
                 </div>
@@ -2708,22 +2702,25 @@ export default function App() {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label>Select Machine Specification</label>
-                <select 
-                  value={selectedMachine.name}
-                  onChange={(e) => {
-                    const m = MACHINE_PRESETS.find(p => p.name === e.target.value);
-                    if (m) {
-                      setSelectedMachine(m);
-                      setCustomPrice(m.basePrice);
-                    }
-                  }}
-                  className="crm-select"
-                >
-                  {MACHINE_PRESETS.map((m, i) => (
-                    <option key={i} value={m.name}>{m.name} - ₹{m.basePrice.toLocaleString("en-IN")}</option>
-                  ))}
-                </select>
+                <label>Product / Service / Item Name</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Standard Business Package, Consulting, Products..." 
+                  value={quoteItem} 
+                  onChange={(e) => setQuoteItem(e.target.value)}
+                  className="crm-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Base Amount / Price (₹)</label>
+                <input 
+                  type="number" 
+                  placeholder="e.g. 25000"
+                  value={customPrice} 
+                  onChange={(e) => setCustomPrice(Number(e.target.value))}
+                  className="crm-input"
+                />
               </div>
 
               <div className="quote-math-box">

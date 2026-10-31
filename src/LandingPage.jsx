@@ -171,7 +171,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
           <span>•</span>
           <div className="trust-badge-item">
             <Award size={15} className="text-emerald" />
-            <span>Trusted by Food Machinery & Tourism Leaders</span>
+            <span>Trusted by High-Growth Businesses Across India</span>
           </div>
         </div>
 
@@ -394,7 +394,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
             </div>
             <h3 className="feature-title">Multi-Client SaaS Workspace Isolation</h3>
             <p className="feature-desc">
-              Run multiple businesses under one master portal. Seamlessly toggle between <strong>Jay Shree Ambe Food Machinery</strong>, <strong>MNP Holidays</strong>, and new client accounts.
+              Run multiple business units or branches under one master portal. Seamlessly isolate data, sales teams, and customer pipelines for each brand.
             </p>
           </div>
 
@@ -524,26 +524,26 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
         <div className="testimonials-grid">
           <div className="testimonial-card">
             <div className="testimonial-quote">
-              "We receive dozens of inquiries daily from UP, Bihar, and Rajasthan for our commercial pulverizers and flour mills. BrizCRM's 1-click WhatsApp quotation generator in Hindi allows our sales reps Mukeshbhai and Anilbhai to send quotes with GST in 30 seconds. It transformed our factory follow-up speed!"
+              "We receive dozens of inquiries daily across multiple states. BrizCRM's 1-click WhatsApp quotation generator and stage tracking allows our sales reps to send official quotes with GST in 30 seconds. It completely eliminated lead leakage and boosted our closing speed!"
             </div>
             <div className="testimonial-author-row">
-              <div className="author-avatar">JA</div>
+              <div className="author-avatar">AS</div>
               <div>
-                <div className="author-name">Jay Shree Ambe Food Machinery</div>
-                <div className="author-title">Food Processing Equipment Manufacturer (Ahmedabad, Gujarat)</div>
+                <div className="author-name">Rajesh Sharma</div>
+                <div className="author-title">Director, Apex Industrial Solutions (Mumbai)</div>
               </div>
             </div>
           </div>
 
           <div className="testimonial-card">
             <div className="testimonial-quote">
-              "Managing holiday inquiries for Dubai, Thailand, Bali, and Goa requires instant itinerary sharing and polite follow-ups. BrizCRM gave us a dedicated workspace with customized tour packages, eliminating lead chaos across our booking desks."
+              "Before BrizCRM, our team was losing track of leads across personal WhatsApp chats and excel sheets. With BrizCRM's visual pipeline and automatic follow-up reminders, every inquiry is answered immediately. It is by far the fastest CRM in India."
             </div>
             <div className="testimonial-author-row">
-              <div className="author-avatar" style={{ background: "linear-gradient(135deg, #10b981, #06b6d4)" }}>MN</div>
+              <div className="author-avatar" style={{ background: "linear-gradient(135deg, #10b981, #06b6d4)" }}>PM</div>
               <div>
-                <div className="author-name">MNP Holidays</div>
-                <div className="author-title">International & Domestic Tour Operators (Gujarat)</div>
+                <div className="author-name">Pooja Mehta</div>
+                <div className="author-title">Founder, Horizon Business Services (Bengaluru)</div>
               </div>
             </div>
           </div>
@@ -753,7 +753,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
                       <input
                         type="text"
                         required
-                        placeholder="Company or Factory Name (e.g. Patel Machinery)"
+                        placeholder="Company or Business Name (e.g. Acme Enterprises)"
                         className="checkout-input"
                         value={checkoutForm.companyName}
                         onChange={(e) => setCheckoutForm({ ...checkoutForm, companyName: e.target.value })}
