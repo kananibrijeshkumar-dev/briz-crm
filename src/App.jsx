@@ -28,6 +28,14 @@ export default function App() {
   const [loginPasswordInput, setLoginPasswordInput] = useState("Ambe@Owner2026");
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [authTab, setAuthTab] = useState("signin"); // "signin" or "signup"
+  const [signUpForm, setSignUpForm] = useState({
+    companyName: "",
+    ownerName: "",
+    whatsapp: "",
+    email: "",
+    password: ""
+  });
 
   // View Mode: 'landing' (Public SaaS Website) or 'app' (CRM Workstation)
   const [viewMode, setViewMode] = useState(() => {
