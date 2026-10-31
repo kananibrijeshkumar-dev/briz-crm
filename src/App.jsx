@@ -1,7 +1,7 @@
 import LandingPage from "./LandingPage";
 import React, { useState, useEffect } from "react";
 import { 
-  Users, Phone, MessageSquare, Plus, Search, Filter, 
+  ArrowLeft, Users, Phone, MessageSquare, Plus, Search, Filter, 
   TrendingUp, Award, Clock, MapPin, FileText, ChevronRight, 
   CheckCircle, LayoutGrid, List, Sparkles, Building2, X, ExternalLink,
   LogIn, LogOut, Shield, ShieldCheck, Download, Eye, Send, Settings,
@@ -472,6 +472,65 @@ export default function App() {
   // -------------------------------------------------------------
   // LOGIN SCREEN
   // -------------------------------------------------------------
+  // Free Account Registration Handler (Zero upfront payment required)
+  const handleSignUpSubmit = async (e) => {
+    e.preventDefault();
+    if (!signUpForm.companyName.trim() || !signUpForm.whatsapp.trim()) {
+      setLoginError("Please enter your Company Name and WhatsApp Number.");
+      return;
+    }
+    const compName = signUpForm.companyName.trim();
+    const adminUser = {
+      name: (signUpForm.ownerName.trim() || "Owner") + " (Admin)",
+      email: signUpForm.email.trim() || (signUpForm.whatsapp + "@crm.online"),
+      phone: signUpForm.whatsapp.trim(),
+      role: "client_admin",
+      company: compName,
+      repName: "All Representatives (Admin View)"
+    };
+    setUser(adminUser);
+    setActiveClient(compName);
+    setSelectedRep("All Representatives (Admin View)");
+    setTenantsList(prev => {
+      if (prev.find(c => c.name.toLowerCase() === compName.toLowerCase())) return prev;
+      return [
+        {
+          id: Date.now(),
+          name: compName,
+          industry: "Commercial & Manufacturing",
+          city: "Gujarat",
+          ownerName: signUpForm.ownerName.trim() || "Owner",
+          whatsapp: signUpForm.whatsapp.trim(),
+          plan: "14-Day Free Trial (All Features)",
+          status: "Active Trial",
+          leadsCount: 0,
+          pipelineVal: 0
+        },
+        ...prev
+      ];
+    });
+    setLeads([]); // 0 leads, clean scratch!
+    setIsAuthenticated(true);
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    try {
+      await supabase.from("briz_companies").insert([{
+        name: compName,
+        industry: "Commercial & Manufacturing",
+        city: "Gujarat",
+        owner_name: signUpForm.ownerName,
+        whatsapp: signUpForm.whatsapp,
+        plan: "14-Day Free Trial",
+        status: "active"
+      }]);
+    } catch (err) {
+      console.log("Supabase notice:", err);
+    }
+  };
+
   // Cashfree Client Onboarding Handler
   const handleRegisterClient = async (clientData) => {
     const compName = clientData.companyName || "My Business Workspace";
@@ -540,6 +599,18 @@ export default function App() {
     return (
       <div className="login-wrapper">
         <div className="login-card fade-in">
+          {/* Back to Website Bar */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <button 
+              type="button" 
+              onClick={() => switchViewMode("landing")}
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#94a3b8", padding: "6px 14px", borderRadius: "8px", fontSize: "13px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              <ArrowLeft size={14} /> Back to Website
+            </button>
+            <span style={{ fontSize: "12px", color: "#64748b" }}>BrizCRM Cloud</span>
+          </div>
+
           <div className="login-brand">
             <div className="brand-logo-icon">
               <Sparkles size={28} className="text-primary-glow" />
@@ -550,14 +621,141 @@ export default function App() {
             </div>
           </div>
 
+          {/* Switcher: Sign In vs Create Free Account */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", background: "rgba(0,0,0,0.3)", padding: "4px", borderRadius: "10px", margin: "16px 0" }}>
+            <button
+              type="button"
+              onClick={() => { setAuthTab("signin"); setLoginError(""); }}
+              style={{
+                background: authTab === "signin" ? "#6366f1" : "transparent",
+                color: authTab === "signin" ? "#ffffff" : "#94a3b8",
+                border: "none",
+                padding: "10px",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "14px",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthTab("signup"); setLoginError(""); }}
+              style={{
+                background: authTab === "signup" ? "#6366f1" : "transparent",
+                color: authTab === "signup" ? "#ffffff" : "#94a3b8",
+                border: "none",
+                padding: "10px",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "14px",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              Create Free Account
+            </button>
+          </div>
+
           <div className="login-client-tag">
             <Building2 size={16} />
             <span>Workspace: <strong>{activeClient}</strong></span>
           </div>
 
           <div className="login-box">
-            <h2 className="login-heading">Sign In to Workspace</h2>
-            <p className="login-desc">Enter your business credentials or pick a test profile below:</p>
+            {authTab === "signup" ? (
+              <div>
+                <h2 className="login-heading">Create Your Free Workspace</h2>
+                <p className="login-desc">Get started in 10 seconds. 14 days free trial, no credit card required:</p>
+
+                {loginError && (
+                  <div className="login-error-banner">
+                    <AlertCircle size={16} />
+                    <span>{loginError}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSignUpSubmit}>
+                  <div className="form-group">
+                    <label>Company or Business Name *</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={signUpForm.companyName} 
+                      onChange={(e) => setSignUpForm({ ...signUpForm, companyName: e.target.value })}
+                      placeholder="e.g. Patel Engineering Works, Shree Ram Agro" 
+                      className="login-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Owner / Admin Name</label>
+                    <input 
+                      type="text" 
+                      value={signUpForm.ownerName} 
+                      onChange={(e) => setSignUpForm({ ...signUpForm, ownerName: e.target.value })}
+                      placeholder="Your Full Name" 
+                      className="login-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>WhatsApp Mobile Number (+91) *</label>
+                    <input 
+                      type="tel" 
+                      required
+                      value={signUpForm.whatsapp} 
+                      onChange={(e) => setSignUpForm({ ...signUpForm, whatsapp: e.target.value })}
+                      placeholder="+91 98988 60145" 
+                      className="login-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Work Email Address</label>
+                    <input 
+                      type="email" 
+                      value={signUpForm.email} 
+                      onChange={(e) => setSignUpForm({ ...signUpForm, email: e.target.value })}
+                      placeholder="admin@yourcompany.com" 
+                      className="login-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Create Password *</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={signUpForm.password} 
+                      onChange={(e) => setSignUpForm({ ...signUpForm, password: e.target.value })}
+                      placeholder="Create your admin password" 
+                      className="login-input"
+                    />
+                  </div>
+
+                  <button type="submit" className="login-btn-primary" style={{ background: "linear-gradient(135deg, #10b981, #059669)", marginTop: "12px" }}>
+                    <Sparkles size={18} /> Launch Free Workspace (14 Days Free) &rarr;
+                  </button>
+
+                  <div style={{ textAlign: "center", marginTop: "16px", fontSize: "13px", color: "#94a3b8" }}>
+                    Already have an account?{" "}
+                    <button 
+                      type="button" 
+                      onClick={() => setAuthTab("signin")}
+                      style={{ background: "none", border: "none", color: "#818cf8", fontWeight: "600", cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      Sign In here
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div>
+                <h2 className="login-heading">Sign In to Workspace</h2>
+                <p className="login-desc">Enter your business credentials or pick a test profile below:</p>
 
             {loginError && (
               <div className="login-error-banner">
@@ -654,6 +852,17 @@ export default function App() {
               </button>
             </form>
 
+            <div style={{ textAlign: "center", marginTop: "12px", fontSize: "13px", color: "#94a3b8" }}>
+              Don't have an account?{" "}
+              <button 
+                type="button" 
+                onClick={() => setAuthTab("signup")}
+                style={{ background: "none", border: "none", color: "#818cf8", fontWeight: "600", cursor: "pointer", textDecoration: "underline" }}
+              >
+                Create Free Account
+              </button>
+            </div>
+
             <div className="demo-accounts-divider">
               <span>OR 1-CLICK QUICK ACCESS FOR CLIENT DEMO</span>
             </div>
@@ -734,8 +943,10 @@ export default function App() {
               </button>
             </div>
           </div>
+        )}
+      </div>
 
-          <div className="login-footer">
+      <div className="login-footer">
             <Shield size={14} />
             <span>256-Bit SSL Encrypted | Custom Domain: <strong>crm.brizpatel.online</strong></span>
           </div>
