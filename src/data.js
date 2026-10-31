@@ -9,6 +9,15 @@ export const ADMIN_USERS = [
     password: "Briz@Admin2026",
     role: "super_admin",
     company: "Briz AiWeb Studio"
+  },
+  {
+    id: "super-admin-gmail",
+    name: "Briz Patel (Super Admin)",
+    loginId: "brizpatel13@gmail.com",
+    phone: "+91 87990 36132",
+    password: "Briz@Admin2026",
+    role: "super_admin",
+    company: "Briz AiWeb Studio"
   }
 ];
 
