@@ -1024,21 +1024,23 @@ export default function App() {
             onClick={() => setActiveTab("team")}
           >
             <Users size={18} />
-            {!sidebarCollapsed && <span>Sales Team (9 Reps)</span>}
+            {!sidebarCollapsed && <span>Sales Team</span>}
           </button>
 
-          <button 
-            className={`nav-item ${activeTab === "clients" ? "active" : ""}`}
-            onClick={() => setActiveTab("clients")}
-          >
-            <Building2 size={18} />
-            {!sidebarCollapsed && (
-              <span className="flex-row-between">
-                <span>Client Workspaces</span>
-                <span className="badge-saas">SaaS</span>
-              </span>
-            )}
-          </button>
+          {user.role === "super_admin" && (
+            <button 
+              className={`nav-item ${activeTab === "clients" ? "active" : ""}`}
+              onClick={() => setActiveTab("clients")}
+            >
+              <Building2 size={18} />
+              {!sidebarCollapsed && (
+                <span className="flex-row-between">
+                  <span>Client Workspaces</span>
+                  <span className="badge-saas">Admin</span>
+                </span>
+              )}
+            </button>
+          )}
 
           <button 
             className={`nav-item ${activeTab === "settings" ? "active" : ""}`}
@@ -1099,15 +1101,21 @@ export default function App() {
             </button>
             <div className="client-switcher-pill">
               <Building2 size={15} />
-              <select 
-                value={activeClient} 
-                onChange={(e) => setActiveClient(e.target.value)}
-                className="client-select-dropdown"
-              >
-                {tenantsList.map(c => (
-                  <option key={c.id} value={c.name}>{c.name}</option>
-                ))}
-              </select>
+              {user.role === "super_admin" ? (
+                <select 
+                  value={activeClient} 
+                  onChange={(e) => setActiveClient(e.target.value)}
+                  className="client-select-dropdown"
+                >
+                  {tenantsList.map(c => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <span style={{ fontWeight: 600, fontSize: "13px", color: "#f8fafc", padding: "0 6px" }}>
+                  {user.company || activeClient}
+                </span>
+              )}
             </div>
           </div>
 
