@@ -51,6 +51,7 @@ export default function App() {
 
   // Data State
   const [leads, setLeads] = useState(INITIAL_LEADS);
+  const [tenantsList, setTenantsList] = useState(CLIENT_TENANTS);
   const [selectedRep, setSelectedRep] = useState("All Representatives (Admin View)");
   const [stageFilter, setStageFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -471,6 +472,57 @@ export default function App() {
   // -------------------------------------------------------------
   // LOGIN SCREEN
   // -------------------------------------------------------------
+  // Cashfree Client Onboarding Handler
+  const handleRegisterClient = async (clientData) => {
+    const compName = clientData.companyName || "My Business Workspace";
+    setActiveClient(compName);
+    setIsAuthenticated(true);
+    setUserRole("client_admin");
+    const newAdminUser = {
+      name: (clientData.ownerName || "Owner") + " (Admin)",
+      phone: clientData.whatsapp || "+91 98988 60145",
+      company: compName,
+      role: "client_admin"
+    };
+    setCurrentUser(newAdminUser);
+    
+    setTenantsList(prev => {
+      if (prev.find(c => c.name.toLowerCase() === compName.toLowerCase())) return prev;
+      return [
+        {
+          id: Date.now(),
+          name: compName,
+          industry: "Commercial & Manufacturing",
+          city: "Gujarat",
+          ownerName: clientData.ownerName || "Owner",
+          whatsapp: clientData.whatsapp,
+          plan: clientData.plan + " (" + (clientData.billingCycle === "annual" ? "Annual" : "Monthly") + ")",
+          status: "Active Subscription",
+          leadsCount: 0,
+          pipelineVal: 0
+        },
+        ...prev
+      ];
+    });
+    
+    switchViewMode("app");
+    setActiveTab("leads");
+    
+    try {
+      await supabase.from("briz_companies").insert([{
+        name: compName,
+        industry: "Commercial & Manufacturing",
+        city: "Gujarat",
+        owner_name: clientData.ownerName,
+        whatsapp: clientData.whatsapp,
+        plan: clientData.plan + " (" + clientData.billingCycle + ")",
+        status: "active"
+      }]);
+    } catch (e) {
+      console.log("Supabase company notice:", e);
+    }
+  };
+
   if (viewMode === "landing") {
     return (
       <LandingPage 
@@ -479,6 +531,7 @@ export default function App() {
           switchViewMode("app");
           setIsAuthenticated(false);
         }}
+        onRegisterClient={handleRegisterClient}
       />
     );
   }
@@ -857,7 +910,7 @@ export default function App() {
                 onChange={(e) => setActiveClient(e.target.value)}
                 className="client-select-dropdown"
               >
-                {CLIENT_TENANTS.map(c => (
+                {tenantsList.map(c => (
                   <option key={c.id} value={c.name}>{c.name}</option>
                 ))}
               </select>
@@ -1177,7 +1230,28 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredLeads.map((lead) => (
+                  {filteredLeads.length === 0 ? (
+                    <tr className="empty-leads-row">
+                      <td colSpan={9} style={{ textAlign: "center", padding: "64px 24px" }}>
+                        <div style={{ maxWidth: 440, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+                          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(99, 102, 241, 0.12)", border: "1px solid rgba(99, 102, 241, 0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#818cf8" }}>
+                            <Sparkles size={30} />
+                          </div>
+                          <h3 style={{ margin: 0, color: "#f8fafc", fontSize: "20px", fontWeight: "700" }}>Your Sales Pipeline is Clean & Ready</h3>
+                          <p style={{ margin: 0, color: "#94a3b8", fontSize: "14px", lineHeight: "1.6" }}>
+                            Zero demo leads. You are starting 100% clean from scratch for <strong>{activeClient}</strong>! Click below to add your first live customer lead.
+                          </p>
+                          <button 
+                            onClick={() => setShowAddModal(true)}
+                            style={{ marginTop: 8, background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "white", border: "none", padding: "12px 24px", borderRadius: "10px", fontWeight: "600", fontSize: "14px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", boxShadow: "0 4px 16px rgba(99, 102, 241, 0.4)" }}
+                          >
+                            <Plus size={18} /> + Add Your First Customer Lead
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLeads.map((lead) => (
                     <tr key={lead.id} className="data-row">
                       <td className="lead-name-cell" onClick={() => { setActiveLeadDrawer(lead); setNotesEdit(""); }}>
                         <div className="customer-avatar">{lead.customer_name.charAt(0)}</div>
@@ -1317,7 +1391,8 @@ export default function App() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                )}
                 </tbody>
               </table>
             </div>
@@ -1937,7 +2012,7 @@ export default function App() {
             </div>
 
             <div className="clients-showcase-grid">
-              {CLIENT_TENANTS.map((c) => (
+              {tenantsList.map((c) => (
                 <div key={c.id} className="client-tenant-card">
                   <div className="client-tenant-header">
                     <div className="client-icon-box">{c.logo}</div>

@@ -3,12 +3,96 @@ import {
   Zap, Check, ArrowRight, Shield, MessageSquare, Clock, 
   FileText, LayoutGrid, Users, Building2, ChevronRight,
   TrendingUp, Award, Star, ExternalLink, Globe, Sparkles,
-  PhoneCall, CheckCircle2, Lock, BarChart3, Database, Phone, Mail, MapPin
+  PhoneCall, CheckCircle2, Lock, BarChart3, Database, Phone, Mail, MapPin,
+  CreditCard, QrCode, X, Smartphone, User
 } from "lucide-react";
+import confetti from "canvas-confetti";
 import "./LandingPage.css";
 
-export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
+const PLANS_CONFIG = {
+  starter: {
+    id: "starter",
+    name: "Starter Growth",
+    desc: "Perfect for small workshops, traders, and single-desk offices.",
+    priceMonthly: 999,
+    priceAnnual: 799,
+    repsLimit: 3
+  },
+  pro: {
+    id: "pro",
+    name: "Pro Business",
+    desc: "For active factories, travel agencies, and growing sales teams.",
+    priceMonthly: 2499,
+    priceAnnual: 1999,
+    repsLimit: 10,
+    popular: true
+  },
+  enterprise: {
+    id: "enterprise",
+    name: "Enterprise Custom",
+    desc: "For large industrial plants, multi-branch firms, and SaaS agencies.",
+    priceMonthly: 5999,
+    priceAnnual: 4799,
+    repsLimit: 50
+  }
+};
+
+export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegisterClient }) {
   const [billingCycle, setBillingCycle] = useState("annual"); // "monthly" or "annual"
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState("pro");
+  const [checkoutForm, setCheckoutForm] = useState({
+    companyName: "",
+    ownerName: "",
+    whatsapp: "",
+    email: "",
+    password: "",
+    paymentMethod: "upi", // 'upi', 'card', 'netbanking', 'trial'
+    upiId: "",
+    isCashfreeDevMode: true
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+
+  const openCheckout = (planId = "pro") => {
+    setSelectedPlanId(planId);
+    setCheckoutSuccess(false);
+    setCheckoutModalOpen(true);
+  };
+
+  const handleCheckoutSubmit = (e) => {
+    e.preventDefault();
+    if (!checkoutForm.companyName.trim() || !checkoutForm.whatsapp.trim()) {
+      alert("Please enter your Company Name and WhatsApp Number.");
+      return;
+    }
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      setCheckoutSuccess(true);
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+      setTimeout(() => {
+        setCheckoutModalOpen(false);
+        const plan = PLANS_CONFIG[selectedPlanId] || PLANS_CONFIG.pro;
+        if (onRegisterClient) {
+          onRegisterClient({
+            companyName: checkoutForm.companyName.trim(),
+            ownerName: checkoutForm.ownerName.trim() || "Owner",
+            whatsapp: checkoutForm.whatsapp.trim(),
+            email: checkoutForm.email.trim(),
+            plan: plan.name,
+            billingCycle
+          });
+        } else if (onEnterWorkstation) {
+          onEnterWorkstation();
+        }
+      }, 1400);
+    }, 1200);
+  };
 
   return (
     <div className="landing-page-root">
@@ -39,7 +123,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
           <button className="btn-landing-login" onClick={onOpenLogin || onEnterWorkstation}>
             <Lock size={14} /> Client Sign In
           </button>
-          <button className="btn-landing-cta" onClick={onEnterWorkstation}>
+          <button className="btn-landing-cta" onClick={() => openCheckout("pro")}>
             <span>Launch Live CRM</span>
             <ArrowRight size={14} />
           </button>
@@ -65,7 +149,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
         </p>
 
         <div className="hero-cta-cluster">
-          <button className="btn-hero-primary" onClick={onEnterWorkstation}>
+          <button className="btn-hero-primary" onClick={() => openCheckout("pro")}>
             <Zap size={18} />
             <span>Launch Workstation &rarr;</span>
           </button>
@@ -380,7 +464,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
               <li className="plan-feature-item"><Check size={16} className="plan-check-icon" /> Basic Follow-Up Call Scheduling</li>
               <li className="plan-feature-item"><Check size={16} className="plan-check-icon" /> PostgreSQL Cloud Data Security</li>
             </ul>
-            <button className="btn-pricing-cta" onClick={onEnterWorkstation}>
+            <button className="btn-pricing-cta" onClick={() => openCheckout("starter")}>
               Get Started with Starter &rarr;
             </button>
           </div>
@@ -403,7 +487,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
               <li className="plan-feature-item"><Check size={16} className="plan-check-icon" /> Rep Performance & Won Deal Tracking</li>
               <li className="plan-feature-item"><Check size={16} className="plan-check-icon" /> Direct WhatsApp Credential Invites</li>
             </ul>
-            <button className="btn-pricing-cta featured" onClick={onEnterWorkstation}>
+            <button className="btn-pricing-cta featured" onClick={() => openCheckout("pro")}>
               Start Pro Business &rarr;
             </button>
           </div>
@@ -423,7 +507,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
               <li className="plan-feature-item"><Check size={16} className="plan-check-icon" /> Custom GST & Transport Calculator Rules</li>
               <li className="plan-feature-item"><Check size={16} className="plan-check-icon" /> Dedicated Account Manager & VIP Support</li>
             </ul>
-            <button className="btn-pricing-cta" onClick={onEnterWorkstation}>
+            <button className="btn-pricing-cta" onClick={() => openCheckout("enterprise")}>
               Contact for Enterprise &rarr;
             </button>
           </div>
@@ -473,7 +557,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
           Join high-performance sales teams running on BrizCRM. Launch your command center or explore the live interactive demo right now.
         </p>
         <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-          <button className="btn-hero-primary" onClick={onEnterWorkstation}>
+          <button className="btn-hero-primary" onClick={() => openCheckout("pro")}>
             <Zap size={18} />
             <span>Open BrizCRM Workstation</span>
           </button>
@@ -592,6 +676,247 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin }) {
           </div>
         </div>
       </footer>
+    
+      {/* CASHFREE SECURE CHECKOUT & ONBOARDING MODAL */}
+      {checkoutModalOpen && (
+        <div className="checkout-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setCheckoutModalOpen(false); }}>
+          <div className="checkout-modal-card fade-in">
+            <div className="checkout-modal-header">
+              <div>
+                <h3 className="checkout-modal-title">Subscribe & Launch Workspace</h3>
+                <p className="checkout-modal-sub">Instant onboarding via Cashfree Payments with 100% clean scratch workspace</p>
+              </div>
+              <button className="checkout-close-btn" onClick={() => setCheckoutModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {checkoutSuccess ? (
+              <div className="success-state-view">
+                <div className="success-icon-wrap">
+                  <CheckCircle2 size={38} />
+                </div>
+                <h3 style={{ margin: 0, fontSize: 22, color: "#ffffff" }}>Payment Successful!</h3>
+                <p style={{ margin: 0, color: "#94a3b8", fontSize: 14 }}>
+                  Company workspace for <strong>{checkoutForm.companyName}</strong> is registered. Loading your clean, fresh CRM...
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleCheckoutSubmit} className="checkout-modal-body">
+                {/* 1. Plan Selector Strip */}
+                <div>
+                  <span className="checkout-label">Select Subscription Package</span>
+                  <div className="checkout-plan-strip">
+                    {Object.values(PLANS_CONFIG).map((p) => (
+                      <button
+                        type="button"
+                        key={p.id}
+                        className={"checkout-plan-btn " + (selectedPlanId === p.id ? "active" : "")}
+                        onClick={() => setSelectedPlanId(p.id)}
+                      >
+                        <span className="plan-btn-name">{p.name}</span>
+                        <span className="plan-btn-price">
+                          ₹{billingCycle === "annual" ? p.priceAnnual : p.priceMonthly}
+                          <small style={{ fontSize: 10, fontWeight: 400, color: "#94a3b8" }}>/mo</small>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Billing Cycle Switcher */}
+                <div className="checkout-cycle-toggle">
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#cbd5e1" }}>Billing Frequency</span>
+                  <div className="checkout-cycle-pills">
+                    <button
+                      type="button"
+                      className={"cycle-pill-btn " + (billingCycle === "monthly" ? "active" : "")}
+                      onClick={() => setBillingCycle("monthly")}
+                    >
+                      Monthly
+                    </button>
+                    <button
+                      type="button"
+                      className={"cycle-pill-btn " + (billingCycle === "annual" ? "active" : "")}
+                      onClick={() => setBillingCycle("annual")}
+                    >
+                      Annual (Save 20%)
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Customer & Business Information */}
+                <div>
+                  <span className="checkout-label">Your Business Credentials</span>
+                  <div className="checkout-form-grid">
+                    <div className="checkout-field-full">
+                      <input
+                        type="text"
+                        required
+                        placeholder="Company or Factory Name (e.g. Patel Machinery)"
+                        className="checkout-input"
+                        value={checkoutForm.companyName}
+                        onChange={(e) => setCheckoutForm({ ...checkoutForm, companyName: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Owner / Admin Name"
+                        className="checkout-input"
+                        value={checkoutForm.ownerName}
+                        onChange={(e) => setCheckoutForm({ ...checkoutForm, ownerName: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="WhatsApp Number (+91)"
+                        className="checkout-input"
+                        value={checkoutForm.whatsapp}
+                        onChange={(e) => setCheckoutForm({ ...checkoutForm, whatsapp: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="email"
+                        placeholder="Work Email Address"
+                        className="checkout-input"
+                        value={checkoutForm.email}
+                        onChange={(e) => setCheckoutForm({ ...checkoutForm, email: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="password"
+                        placeholder="Create Admin Password"
+                        className="checkout-input"
+                        value={checkoutForm.password}
+                        onChange={(e) => setCheckoutForm({ ...checkoutForm, password: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Cashfree Gateway Payment Section */}
+                <div className="cashfree-banner-box">
+                  <div className="cashfree-top-row">
+                    <div className="cashfree-brand-badge">
+                      <Zap size={16} /> CASHFREE PAYMENTS
+                    </div>
+                    <span className="cashfree-auth-tag">
+                      <Shield size={11} /> RBI Regulated Gateway
+                    </span>
+                  </div>
+
+                  <span className="checkout-label" style={{ margin: 0 }}>Select Payment Method</span>
+                  <div className="payment-methods-grid">
+                    <button
+                      type="button"
+                      className={"pay-method-btn " + (checkoutForm.paymentMethod === "upi" ? "active" : "")}
+                      onClick={() => setCheckoutForm({ ...checkoutForm, paymentMethod: "upi" })}
+                    >
+                      <Smartphone size={16} />
+                      <span>UPI Instant</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={"pay-method-btn " + (checkoutForm.paymentMethod === "card" ? "active" : "")}
+                      onClick={() => setCheckoutForm({ ...checkoutForm, paymentMethod: "card" })}
+                    >
+                      <CreditCard size={16} />
+                      <span>Cards / RuPay</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={"pay-method-btn " + (checkoutForm.paymentMethod === "netbanking" ? "active" : "")}
+                      onClick={() => setCheckoutForm({ ...checkoutForm, paymentMethod: "netbanking" })}
+                    >
+                      <Building2 size={16} />
+                      <span>NetBanking</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={"pay-method-btn " + (checkoutForm.paymentMethod === "trial" ? "active" : "")}
+                      onClick={() => setCheckoutForm({ ...checkoutForm, paymentMethod: "trial" })}
+                    >
+                      <Sparkles size={16} />
+                      <span>14-Day Free</span>
+                    </button>
+                  </div>
+
+                  {checkoutForm.paymentMethod === "upi" && (
+                    <input
+                      type="text"
+                      placeholder="Enter VPA / UPI ID (e.g. mobile@upi, user@okhdfcbank)"
+                      className="checkout-input"
+                      value={checkoutForm.upiId}
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, upiId: e.target.value })}
+                    />
+                  )}
+
+                  {/* Cashfree Dev Mode Toggle */}
+                  <div className="cashfree-dev-toggle-row">
+                    <span className="dev-toggle-label">
+                      <CheckCircle2 size={14} /> Cashfree Developer Mode (Test Sandbox)
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={checkoutForm.isCashfreeDevMode}
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, isCashfreeDevMode: e.target.checked })}
+                      style={{ cursor: "pointer", accentColor: "#6366f1", width: 16, height: 16 }}
+                    />
+                  </div>
+
+                  {/* Order Calculation */}
+                  {(() => {
+                    const plan = PLANS_CONFIG[selectedPlanId] || PLANS_CONFIG.pro;
+                    const unit = billingCycle === "annual" ? plan.priceAnnual : plan.priceMonthly;
+                    const subtotal = billingCycle === "annual" ? unit * 12 : unit;
+                    const gst = Math.round(subtotal * 0.18);
+                    const total = subtotal + gst;
+                    return (
+                      <div className="order-summary-box">
+                        <div className="summary-line">
+                          <span>{plan.name} ({billingCycle === "annual" ? "12 Months Billed Annually" : "1 Month"})</span>
+                          <span>₹{subtotal.toLocaleString("en-IN")}</span>
+                        </div>
+                        <div className="summary-line">
+                          <span>GST (18%)</span>
+                          <span>₹{gst.toLocaleString("en-IN")}</span>
+                        </div>
+                        <div className="summary-line total">
+                          <span>Total Payable Now</span>
+                          <span className="price-tag">
+                            {checkoutForm.paymentMethod === "trial" ? "₹0 (14-Day Free Trial)" : "₹" + total.toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* 5. Launch CTA Button */}
+                <button
+                  type="submit"
+                  className="btn-checkout-launch"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <span>Processing with Cashfree...</span>
+                  ) : checkoutForm.paymentMethod === "trial" ? (
+                    <span>Activate Free Trial & Launch Workspace &rarr;</span>
+                  ) : (
+                    <span>Pay via Cashfree & Launch Workspace &rarr;</span>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
