@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
-  Zap, Check, ArrowRight, Shield, MessageSquare, Clock, 
+  Zap, AlertCircle, Check, ArrowRight, Shield, MessageSquare, Clock, 
   FileText, LayoutGrid, Users, Building2, ChevronRight,
   TrendingUp, Award, Star, ExternalLink, Globe, Sparkles,
   PhoneCall, CheckCircle2, Lock, BarChart3, Database, Phone, Mail, MapPin,
@@ -37,7 +37,7 @@ const PLANS_CONFIG = {
   }
 };
 
-export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegisterClient }) {
+export default function LandingPage({ onEnterWorkstation, onOpenLogin, onOpenSignUp, onRegisterClient }) {
   const [billingCycle, setBillingCycle] = useState("annual"); // "monthly" or "annual"
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState("pro");
@@ -53,19 +53,65 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  // WhatsApp OTP Verification State for Checkout
+  const [checkoutOtpStep, setCheckoutOtpStep] = useState("form"); // "form" or "verify"
+  const [generatedCheckoutOtp, setGeneratedCheckoutOtp] = useState("");
+  const [enteredCheckoutOtp, setEnteredCheckoutOtp] = useState("");
+  const [checkoutOtpTimer, setCheckoutOtpTimer] = useState(45);
+  const [checkoutOtpError, setCheckoutOtpError] = useState("");
+
+  useEffect(() => {
+    let interval = null;
+    if (checkoutOtpStep === "verify" && checkoutOtpTimer > 0) {
+      interval = setInterval(() => {
+        setCheckoutOtpTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [checkoutOtpStep, checkoutOtpTimer]);
 
   const openCheckout = (planId = "pro") => {
     setSelectedPlanId(planId);
     setCheckoutSuccess(false);
+    setCheckoutOtpStep("form");
+    setCheckoutOtpError("");
     setCheckoutModalOpen(true);
   };
 
-  const handleCheckoutSubmit = (e) => {
+  const handleSendCheckoutOtp = (e) => {
     e.preventDefault();
-    if (!checkoutForm.companyName.trim() || !checkoutForm.whatsapp.trim()) {
-      alert("Please enter your Company Name and WhatsApp Number.");
+    setCheckoutOtpError("");
+    if (!checkoutForm.companyName.trim()) {
+      setCheckoutOtpError("Please enter your Company or Business Name.");
       return;
     }
+    const cleanDigits = (checkoutForm.whatsapp || "").replace(/[^0-9]/g, "");
+    if (cleanDigits.length < 10) {
+      setCheckoutOtpError("Please enter a valid 10-digit WhatsApp number.");
+      return;
+    }
+
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    setGeneratedCheckoutOtp(code);
+    setEnteredCheckoutOtp("");
+    setCheckoutOtpTimer(45);
+    setCheckoutOtpStep("verify");
+
+    const targetPhone = cleanDigits.startsWith("91") ? cleanDigits : `91${cleanDigits.slice(-10)}`;
+    const waMsg = encodeURIComponent(`*BrizCRM Verification Code:* ${code}\n\nUse this 4-digit code to activate your 14-day free trial workspace for ${checkoutForm.companyName}.`);
+    try {
+      window.open(`https://wa.me/${targetPhone}?text=${waMsg}`, "_blank");
+    } catch (err) {}
+  };
+
+  const handleVerifyCheckoutOtpAndLaunch = (e) => {
+    e.preventDefault();
+    setCheckoutOtpError("");
+    if (enteredCheckoutOtp.trim() !== generatedCheckoutOtp.trim()) {
+      setCheckoutOtpError("Incorrect OTP code. Please enter the 4 digits sent to your WhatsApp.");
+      return;
+    }
+
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
@@ -77,6 +123,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
       });
       setTimeout(() => {
         setCheckoutModalOpen(false);
+        setCheckoutOtpStep("form");
         const plan = PLANS_CONFIG[selectedPlanId] || PLANS_CONFIG.pro;
         if (onRegisterClient) {
           onRegisterClient({
@@ -90,8 +137,8 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
         } else if (onEnterWorkstation) {
           onEnterWorkstation();
         }
-      }, 1400);
-    }, 1200);
+      }, 1200);
+    }, 600);
   };
 
   return (
@@ -123,7 +170,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
           <button className="btn-landing-login" onClick={onOpenLogin || onEnterWorkstation}>
             <Lock size={14} /> Client Sign In
           </button>
-          <button className="btn-landing-cta" onClick={() => openCheckout("pro")}>
+          <button className="btn-landing-cta" onClick={() => (onOpenSignUp ? onOpenSignUp() : openCheckout("pro"))}>
             <span>Launch Live CRM</span>
             <ArrowRight size={14} />
           </button>
@@ -149,7 +196,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
         </p>
 
         <div className="hero-cta-cluster">
-          <button className="btn-hero-primary" onClick={() => openCheckout("pro")}>
+          <button className="btn-hero-primary" onClick={() => (onOpenSignUp ? onOpenSignUp() : openCheckout("pro"))}>
             <Zap size={18} />
             <span>Launch Workstation &rarr;</span>
           </button>
@@ -557,7 +604,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
           Join high-performance sales teams running on BrizCRM. Launch your command center or explore the live interactive demo right now.
         </p>
         <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-          <button className="btn-hero-primary" onClick={() => openCheckout("pro")}>
+          <button className="btn-hero-primary" onClick={() => (onOpenSignUp ? onOpenSignUp() : openCheckout("pro"))}>
             <Zap size={18} />
             <span>Open BrizCRM Workstation</span>
           </button>
@@ -701,8 +748,108 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
                   Company workspace for <strong>{checkoutForm.companyName}</strong> is registered. Loading your clean, fresh CRM...
                 </p>
               </div>
+            ) : checkoutOtpStep === "verify" ? (
+              <form onSubmit={handleVerifyCheckoutOtpAndLaunch} className="checkout-modal-body" style={{ padding: "24px 20px" }}>
+                <div style={{
+                  background: "rgba(16, 185, 129, 0.12)",
+                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                  borderRadius: "12px",
+                  padding: "18px",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>
+                    💬 WhatsApp Code Sent
+                  </div>
+                  <div style={{ fontSize: "14px", color: "#e2e8f0" }}>
+                    Verification code sent to <strong>{checkoutForm.whatsapp}</strong>
+                  </div>
+                  <div style={{
+                    marginTop: "10px",
+                    display: "inline-block",
+                    background: "#0f172a",
+                    border: "1px dashed #10b981",
+                    padding: "8px 20px",
+                    borderRadius: "8px",
+                    color: "#34d399",
+                    fontWeight: "800",
+                    fontSize: "22px",
+                    letterSpacing: "6px"
+                  }}>
+                    {generatedCheckoutOtp}
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
+                    (Live instant demo code shown above for test convenience)
+                  </div>
+                </div>
+
+                {checkoutOtpError && (
+                  <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", color: "#fca5a5", padding: "10px", borderRadius: "8px", fontSize: "13px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <AlertCircle size={16} /> <span>{checkoutOtpError}</span>
+                  </div>
+                )}
+
+                <div style={{ textAlign: "center" }}>
+                  <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#cbd5e1", marginBottom: "8px" }}>
+                    Enter 4-Digit Security Code
+                  </label>
+                  <input 
+                    type="text" 
+                    maxLength={4}
+                    required
+                    autoFocus
+                    value={enteredCheckoutOtp} 
+                    onChange={(e) => setEnteredCheckoutOtp(e.target.value.replace(/[^0-9]/g, ""))}
+                    placeholder="••••" 
+                    style={{ 
+                      width: "180px",
+                      margin: "0 auto",
+                      textAlign: "center", 
+                      fontSize: "28px", 
+                      fontWeight: "800", 
+                      letterSpacing: "12px", 
+                      color: "#34d399",
+                      padding: "10px",
+                      background: "#0f172a",
+                      border: "1px solid #334155",
+                      borderRadius: "8px"
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", color: "#94a3b8" }}>
+                  <span>
+                    {checkoutOtpTimer > 0 ? (
+                      <>Resend code in <strong>{checkoutOtpTimer}s</strong></>
+                    ) : (
+                      <button 
+                        type="button" 
+                        onClick={handleSendCheckoutOtp}
+                        style={{ background: "none", border: "none", color: "#34d399", fontWeight: "600", cursor: "pointer", textDecoration: "underline" }}
+                      >
+                        Resend Code
+                      </button>
+                    )}
+                  </span>
+                  <button 
+                    type="button" 
+                    onClick={() => setCheckoutOtpStep("form")}
+                    style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    ← Edit Details / Number
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn-checkout-launch"
+                  disabled={isProcessing}
+                  style={{ background: "linear-gradient(135deg, #10b981, #059669)", marginTop: "8px" }}
+                >
+                  {isProcessing ? "Verifying..." : "✅ Verify OTP & Launch Workspace →"}
+                </button>
+              </form>
             ) : (
-              <form onSubmit={handleCheckoutSubmit} className="checkout-modal-body">
+<form onSubmit={handleSendCheckoutOtp} className="checkout-modal-body">
                 {/* 1. Plan Selector Strip */}
                 <div>
                   <span className="checkout-label">Select Subscription Package</span>
@@ -911,6 +1058,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onRegiste
                     <span>Pay via Cashfree & Launch Workspace &rarr;</span>
                   )}
                 </button>
+              
               </form>
             )}
           </div>

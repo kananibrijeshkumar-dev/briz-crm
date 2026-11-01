@@ -4,7 +4,7 @@ import {
   ArrowLeft, Users, Phone, MessageSquare, Plus, Search, Filter, 
   TrendingUp, Award, Clock, MapPin, FileText, ChevronRight, 
   CheckCircle, LayoutGrid, List, Sparkles, Building2, X, ExternalLink,
-  LogIn, LogOut, Shield, ShieldCheck, Download, Eye, Send, Settings,
+  LogIn, LogOut, Shield, ShieldCheck, Download, Eye, Send, Settings, Key,
   ArrowUpRight, Check, AlertCircle, RefreshCw, BarChart3, Briefcase,
   DollarSign, UserCheck, ChevronDown, Bell, Copy, Printer,
   Trash2, Calendar, AlertTriangle, Globe
@@ -39,8 +39,8 @@ export default function App() {
     }
     return false; // Fresh visitors are not auto-logged in!
   });
-  const [loginInput, setLoginInput] = useState("briz@brizpatel.online");
-  const [loginPasswordInput, setLoginPasswordInput] = useState("Briz@Admin2026");
+  const [loginInput, setLoginInput] = useState("");
+  const [loginPasswordInput, setLoginPasswordInput] = useState("");
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authTab, setAuthTab] = useState("signin"); // "signin" or "signup"
@@ -51,12 +51,20 @@ export default function App() {
     email: "",
     password: ""
   });
-  // WhatsApp OTP Verification State
+  // WhatsApp OTP Verification State (Sign Up)
   const [otpStep, setOtpStep] = useState("form"); // "form" or "verify"
   const [generatedOtp, setGeneratedOtp] = useState("");
   const [enteredOtp, setEnteredOtp] = useState("");
   const [otpTimer, setOtpTimer] = useState(45);
   const [otpSending, setOtpSending] = useState(false);
+
+  // Sign In Method & WhatsApp OTP State (Login)
+  const [signInMethod, setSignInMethod] = useState("otp"); // "otp" (default) or "password"
+  const [loginOtpStep, setLoginOtpStep] = useState("phone"); // "phone" or "verify"
+  const [loginOtpCode, setLoginOtpCode] = useState("");
+  const [enteredLoginOtp, setEnteredLoginOtp] = useState("");
+  const [loginOtpTimer, setLoginOtpTimer] = useState(45);
+  const [loginOtpSending, setLoginOtpSending] = useState(false);
 
   // View Mode: 'landing' (Public SaaS Website) or 'app' (CRM Workstation)
   const [viewMode, setViewMode] = useState(() => {
@@ -556,7 +564,7 @@ export default function App() {
   // -------------------------------------------------------------
   // LOGIN SCREEN
   // -------------------------------------------------------------
-  // OTP Countdown Timer
+  // OTP Countdown Timers (Signup & Login)
   useEffect(() => {
     let interval = null;
     if (otpStep === "verify" && otpTimer > 0) {
@@ -566,6 +574,164 @@ export default function App() {
     }
     return () => clearInterval(interval);
   }, [otpStep, otpTimer]);
+
+  useEffect(() => {
+    let interval = null;
+    if (loginOtpStep === "verify" && loginOtpTimer > 0) {
+      interval = setInterval(() => {
+        setLoginOtpTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [loginOtpStep, loginOtpTimer]);
+
+  // Generate & Send WhatsApp OTP for Login
+  const handleSendLoginOtp = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setLoginError("");
+    const cleanDigits = (loginInput || "").replace(/[^0-9]/g, "");
+    if (cleanDigits.length < 10) {
+      setLoginError("Please enter a valid 10-digit WhatsApp mobile number.");
+      return;
+    }
+
+    setLoginOtpSending(true);
+    const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    setLoginOtpCode(newOtp);
+    setEnteredLoginOtp("");
+    setLoginOtpTimer(45);
+
+    setTimeout(() => {
+      setLoginOtpSending(false);
+      setLoginOtpStep("verify");
+      const targetPhone = cleanDigits.startsWith("91") ? cleanDigits : `91${cleanDigits.slice(-10)}`;
+      const waMsg = encodeURIComponent(`*BrizCRM Login Code:* ${newOtp}\n\nUse this 4-digit OTP to log into your CRM workstation. Valid for 5 minutes.`);
+      try {
+        window.open(`https://wa.me/${targetPhone}?text=${waMsg}`, "_blank");
+      } catch (err) {}
+    }, 500);
+  };
+
+  // Verify Login OTP and Sign In
+  const handleVerifyLoginOtp = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setLoginError("");
+    if (enteredLoginOtp.trim() !== loginOtpCode.trim()) {
+      setLoginError("Incorrect OTP code. Please enter the 4 digits sent to your WhatsApp.");
+      return;
+    }
+
+    const cleanPhone = (loginInput || "").replace(/[^0-9]/g, "");
+    const cleanInput = loginInput.trim().toLowerCase();
+
+    // 1. Check Super Admins (ADMIN_USERS)
+    const matchedAdmin = ADMIN_USERS.find(a => 
+      a.phone.replace(/[^0-9]/g, "") === cleanPhone || a.loginId.toLowerCase() === cleanInput
+    );
+    if (matchedAdmin) {
+      const u = {
+        name: matchedAdmin.name,
+        email: matchedAdmin.loginId,
+        phone: matchedAdmin.phone,
+        role: matchedAdmin.role,
+        company: matchedAdmin.company,
+        repName: "All Representatives (Admin View)"
+      };
+      setUser(u);
+      setActiveClient(matchedAdmin.company);
+      setSelectedRep("All Representatives (Admin View)");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
+        localStorage.setItem("briz_crm_is_auth", "true");
+      }
+      setIsAuthenticated(true);
+      confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+      return;
+    }
+
+    // 2. Check Registered Client Owners (from localStorage)
+    let registeredUsers = [];
+    if (typeof window !== "undefined") {
+      try {
+        registeredUsers = JSON.parse(localStorage.getItem("briz_registered_users") || "[]");
+      } catch (err) {}
+    }
+
+    const matchedClient = registeredUsers.find(u => 
+      u.phone?.replace(/[^0-9]/g, "") === cleanPhone || u.email?.toLowerCase() === cleanInput
+    );
+
+    if (matchedClient) {
+      const u = {
+        name: matchedClient.name,
+        email: matchedClient.email,
+        phone: matchedClient.phone,
+        role: "client_admin",
+        company: matchedClient.company,
+        repName: "All Representatives (Admin View)"
+      };
+      setUser(u);
+      setActiveClient(matchedClient.company);
+      setSelectedRep("All Representatives (Admin View)");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
+        localStorage.setItem("briz_crm_is_auth", "true");
+      }
+      setIsAuthenticated(true);
+      confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+      return;
+    }
+
+    // 3. Check Sales Reps
+    const matchedRep = repsList.find(r => 
+      r.phone.replace(/[^0-9]/g, "") === cleanPhone || (r.email && r.email.toLowerCase() === cleanInput)
+    );
+
+    if (matchedRep) {
+      const u = {
+        name: matchedRep.name,
+        email: matchedRep.email || `${matchedRep.name.toLowerCase()}@crm.online`,
+        phone: matchedRep.phone,
+        role: "sales_rep",
+        company: matchedRep.company || "My Company",
+        repName: matchedRep.name
+      };
+      setUser(u);
+      setActiveClient(matchedRep.company || "My Company");
+      setSelectedRep(matchedRep.name);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
+        localStorage.setItem("briz_crm_is_auth", "true");
+      }
+      setIsAuthenticated(true);
+      confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+      return;
+    }
+
+    // 4. Any verified WhatsApp number gets an instant active workspace!
+    const autoUser = {
+      name: `Owner (+91 ${cleanPhone.slice(-4)})`,
+      email: `${cleanPhone}@crm.online`,
+      phone: `+91 ${cleanPhone.slice(-10)}`,
+      role: "client_admin",
+      company: `My Workspace (${cleanPhone.slice(-4)})`,
+      repName: "All Representatives (Admin View)"
+    };
+    setUser(autoUser);
+    setActiveClient(autoUser.company);
+    setSelectedRep("All Representatives (Admin View)");
+    if (typeof window !== "undefined") {
+      try {
+        const existingUsers = JSON.parse(localStorage.getItem("briz_registered_users") || "[]");
+        existingUsers.push(autoUser);
+        localStorage.setItem("briz_registered_users", JSON.stringify(existingUsers));
+        localStorage.setItem("briz_crm_current_user", JSON.stringify(autoUser));
+        localStorage.setItem("briz_crm_is_auth", "true");
+      } catch (err) {}
+    }
+    setIsAuthenticated(true);
+    confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+  };
 
   // Generate & Send WhatsApp OTP
   const handleSendWhatsAppOtp = (e) => {
@@ -750,10 +916,28 @@ export default function App() {
   if (viewMode === "landing") {
     return (
       <LandingPage 
-        onEnterWorkstation={() => switchViewMode("app")}
+        onEnterWorkstation={() => {
+          switchViewMode("app");
+          setIsAuthenticated(false);
+          setAuthTab("signin");
+          setSignInMethod("otp");
+          setLoginOtpStep("phone");
+          setLoginError("");
+        }}
         onOpenLogin={() => {
           switchViewMode("app");
           setIsAuthenticated(false);
+          setAuthTab("signin");
+          setSignInMethod("otp");
+          setLoginOtpStep("phone");
+          setLoginError("");
+        }}
+        onOpenSignUp={() => {
+          switchViewMode("app");
+          setIsAuthenticated(false);
+          setAuthTab("signup");
+          setOtpStep("form");
+          setLoginError("");
         }}
         onRegisterClient={handleRegisterClient}
       />
@@ -832,8 +1016,14 @@ export default function App() {
           <div className="login-box">
             {authTab === "signup" ? (
               <div>
-                <h2 className="login-heading">Create Your Free Workspace</h2>
-                <p className="login-desc">Get started in 10 seconds. 14 days free trial, no credit card required:</p>
+                <h2 className="login-heading">
+                  {otpStep === "verify" ? "Verify WhatsApp Number" : "Create Your Free Workspace"}
+                </h2>
+                <p className="login-desc">
+                  {otpStep === "verify" 
+                    ? `Enter the 4-digit verification code sent to your WhatsApp (${signUpForm.whatsapp}):`
+                    : "Get started in 10 seconds. 14 days free trial, no credit card required:"}
+                </p>
 
                 {loginError && (
                   <div className="login-error-banner">
@@ -842,304 +1032,578 @@ export default function App() {
                   </div>
                 )}
 
-                <form onSubmit={handleSignUpSubmit}>
-                  <div className="form-group">
-                    <label>Company or Business Name *</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={signUpForm.companyName} 
-                      onChange={(e) => setSignUpForm({ ...signUpForm, companyName: e.target.value })}
-                      placeholder="e.g. Patel Engineering Works, Shree Ram Agro" 
-                      className="login-input"
-                    />
-                  </div>
+                {otpStep === "form" ? (
+                  <form onSubmit={handleSendWhatsAppOtp}>
+                    <div className="form-group">
+                      <label>Company or Business Name *</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={signUpForm.companyName} 
+                        onChange={(e) => setSignUpForm({ ...signUpForm, companyName: e.target.value })}
+                        placeholder="e.g. Patel Engineering Works, Shree Ram Agro" 
+                        className="login-input"
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label>Owner / Admin Name</label>
-                    <input 
-                      type="text" 
-                      value={signUpForm.ownerName} 
-                      onChange={(e) => setSignUpForm({ ...signUpForm, ownerName: e.target.value })}
-                      placeholder="Your Full Name" 
-                      className="login-input"
-                    />
-                  </div>
+                    <div className="form-group">
+                      <label>Owner / Admin Name</label>
+                      <input 
+                        type="text" 
+                        value={signUpForm.ownerName} 
+                        onChange={(e) => setSignUpForm({ ...signUpForm, ownerName: e.target.value })}
+                        placeholder="Your Full Name" 
+                        className="login-input"
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label>WhatsApp Mobile Number (+91) *</label>
-                    <input 
-                      type="tel" 
-                      required
-                      value={signUpForm.whatsapp} 
-                      onChange={(e) => setSignUpForm({ ...signUpForm, whatsapp: e.target.value })}
-                      placeholder="+91 98988 60145" 
-                      className="login-input"
-                    />
-                  </div>
+                    <div className="form-group">
+                      <label>WhatsApp Mobile Number (+91) *</label>
+                      <input 
+                        type="tel" 
+                        required
+                        value={signUpForm.whatsapp} 
+                        onChange={(e) => setSignUpForm({ ...signUpForm, whatsapp: e.target.value })}
+                        placeholder="+91 98988 60145" 
+                        className="login-input"
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label>Work Email Address (Optional)</label>
-                    <input 
-                      type="email" 
-                      value={signUpForm.email} 
-                      onChange={(e) => setSignUpForm({ ...signUpForm, email: e.target.value })}
-                      placeholder="admin@yourcompany.com" 
-                      className="login-input"
-                    />
-                  </div>
+                    <div className="form-group">
+                      <label>Create Password *</label>
+                      <input 
+                        type="password" 
+                        required
+                        value={signUpForm.password} 
+                        onChange={(e) => setSignUpForm({ ...signUpForm, password: e.target.value })}
+                        placeholder="Create your admin password" 
+                        className="login-input"
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label>Create Password *</label>
-                    <input 
-                      type="password" 
-                      required
-                      value={signUpForm.password} 
-                      onChange={(e) => setSignUpForm({ ...signUpForm, password: e.target.value })}
-                      placeholder="Create your admin password" 
-                      className="login-input"
-                    />
-                  </div>
-
-                  <button type="submit" className="login-btn-primary" style={{ background: "linear-gradient(135deg, #10b981, #059669)", marginTop: "12px" }}>
-                    <Sparkles size={18} /> Launch Free Workspace (14 Days Free) &rarr;
-                  </button>
-
-                  <div style={{ textAlign: "center", marginTop: "16px", fontSize: "13px", color: "#94a3b8" }}>
-                    Already have an account?{" "}
                     <button 
-                      type="button" 
-                      onClick={() => setAuthTab("signin")}
-                      style={{ background: "none", border: "none", color: "#818cf8", fontWeight: "600", cursor: "pointer", textDecoration: "underline" }}
+                      type="submit" 
+                      disabled={otpSending}
+                      className="login-btn-primary" 
+                      style={{ background: "linear-gradient(135deg, #10b981, #059669)", marginTop: "12px" }}
                     >
-                      Sign In here
+                      <MessageSquare size={18} /> {otpSending ? "Sending Code to WhatsApp..." : "Send WhatsApp Verification Code →"}
                     </button>
-                  </div>
-                </form>
+
+                    <div style={{ textAlign: "center", marginTop: "16px", fontSize: "13px", color: "#94a3b8" }}>
+                      Already have an account?{" "}
+                      <button 
+                        type="button" 
+                        onClick={() => { setAuthTab("signin"); setLoginError(""); }}
+                        style={{ background: "none", border: "none", color: "#818cf8", fontWeight: "600", cursor: "pointer", textDecoration: "underline" }}
+                      >
+                        Sign In here
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <form onSubmit={handleVerifyOtpAndSubmit}>
+                    <div style={{
+                      background: "rgba(16, 185, 129, 0.12)",
+                      border: "1px solid rgba(16, 185, 129, 0.35)",
+                      borderRadius: "12px",
+                      padding: "16px",
+                      marginBottom: "18px",
+                      textAlign: "center"
+                    }}>
+                      <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>
+                        💬 WhatsApp Code Sent
+                      </div>
+                      <div style={{ fontSize: "14px", color: "#e2e8f0" }}>
+                        Verification code sent to <strong>{signUpForm.whatsapp}</strong>
+                      </div>
+                      <div style={{
+                        marginTop: "10px",
+                        display: "inline-block",
+                        background: "#0f172a",
+                        border: "1px dashed #10b981",
+                        padding: "6px 16px",
+                        borderRadius: "8px",
+                        color: "#34d399",
+                        fontWeight: "800",
+                        fontSize: "20px",
+                        letterSpacing: "5px"
+                      }}>
+                        {generatedOtp}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
+                        (Live code preview provided for immediate testing)
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ textAlign: "center", display: "block" }}>Enter 4-Digit OTP Code</label>
+                      <input 
+                        type="text" 
+                        maxLength={4}
+                        required
+                        autoFocus
+                        value={enteredOtp} 
+                        onChange={(e) => setEnteredOtp(e.target.value.replace(/[^0-9]/g, ""))}
+                        placeholder="••••" 
+                        className="login-input"
+                        style={{ 
+                          textAlign: "center", 
+                          fontSize: "28px", 
+                          fontWeight: "800", 
+                          letterSpacing: "12px", 
+                          color: "#34d399",
+                          padding: "12px"
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", color: "#94a3b8", marginBottom: "16px" }}>
+                      <span>
+                        {otpTimer > 0 ? (
+                          <>Resend in <strong>{otpTimer}s</strong></>
+                        ) : (
+                          <button 
+                            type="button" 
+                            onClick={handleSendWhatsAppOtp}
+                            style={{ background: "none", border: "none", color: "#34d399", fontWeight: "600", cursor: "pointer", textDecoration: "underline" }}
+                          >
+                            Resend Code
+                          </button>
+                        )}
+                      </span>
+                      <button 
+                        type="button" 
+                        onClick={() => setOtpStep("form")}
+                        style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", textDecoration: "underline" }}
+                      >
+                        ← Edit Details / Number
+                      </button>
+                    </div>
+
+                    <button 
+                      type="submit" 
+                      className="login-btn-primary" 
+                      style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
+                    >
+                      <CheckCircle size={18} /> Verify OTP & Launch Workspace &rarr;
+                    </button>
+                  </form>
+                )}
               </div>
             ) : (
               <div>
                 <h2 className="login-heading">Sign In to Workspace</h2>
-                <p className="login-desc">Enter your business credentials or pick a test profile below:</p>
+                <p className="login-desc">Choose WhatsApp OTP or Password to access your dashboard:</p>
 
-            {loginError && (
-              <div className="login-error-banner">
-                <AlertCircle size={16} />
-                <span>{loginError}</span>
-              </div>
-            )}
-
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              setLoginError("");
-
-              // Normalize input
-              const rawInput = loginInput.trim();
-              const cleanInput = rawInput.toLowerCase().replace(/[^a-z0-9@.]/g, "");
-              const cleanPhone = rawInput.replace(/[^0-9]/g, "");
-              const enteredPassword = loginPasswordInput.trim();
-
-              // 1. Check Super Admins (ADMIN_USERS)
-              const matchedAdmin = ADMIN_USERS.find(a => 
-                (a.loginId.toLowerCase() === cleanInput || a.phone.replace(/[^0-9]/g, "") === cleanPhone) &&
-                a.password === enteredPassword
-              );
-
-              if (matchedAdmin) {
-                const u = {
-                  name: matchedAdmin.name,
-                  email: matchedAdmin.loginId,
-                  phone: matchedAdmin.phone,
-                  role: matchedAdmin.role,
-                  company: matchedAdmin.company,
-                  repName: "All Representatives (Admin View)"
-                };
-                setUser(u);
-                setActiveClient(matchedAdmin.company);
-                setSelectedRep("All Representatives (Admin View)");
-                if (typeof window !== "undefined") {
-                  localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
-                }
-                setIsAuthenticated(true);
-                return;
-              }
-
-              // 2. Check Registered Client Owners (from localStorage)
-              let registeredUsers = [];
-              if (typeof window !== "undefined") {
-                try {
-                  registeredUsers = JSON.parse(localStorage.getItem("briz_registered_users") || "[]");
-                } catch (err) {}
-              }
-
-              const matchedClient = registeredUsers.find(u => 
-                (u.email?.toLowerCase() === cleanInput || u.phone?.replace(/[^0-9]/g, "") === cleanPhone) &&
-                (u.password === enteredPassword || enteredPassword === "Admin@123")
-              );
-
-              if (matchedClient) {
-                const u = {
-                  name: matchedClient.name,
-                  email: matchedClient.email,
-                  phone: matchedClient.phone,
-                  role: "client_admin",
-                  company: matchedClient.company,
-                  repName: "All Representatives (Admin View)"
-                };
-                setUser(u);
-                setActiveClient(matchedClient.company);
-                setSelectedRep("All Representatives (Admin View)");
-                if (typeof window !== "undefined") {
-                  localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
-                }
-                setIsAuthenticated(true);
-                return;
-              }
-
-              // 3. Check Sales Reps (from repsList / localStorage)
-              const matchedRep = repsList.find(r => 
-                (r.phone.replace(/[^0-9]/g, "") === cleanPhone || (r.email && r.email.toLowerCase() === cleanInput)) &&
-                (r.password === enteredPassword || enteredPassword === "Rep@123")
-              );
-
-              if (matchedRep) {
-                const u = {
-                  name: matchedRep.name,
-                  email: matchedRep.email || `${matchedRep.name.toLowerCase()}@${(matchedRep.company || "crm").replace(/[^a-z0-9]/g, "").toLowerCase()}.com`,
-                  phone: matchedRep.phone,
-                  role: "sales_rep",
-                  company: matchedRep.company || "My Company",
-                  repName: matchedRep.name
-                };
-                setUser(u);
-                setActiveClient(matchedRep.company || "My Company");
-                setSelectedRep(matchedRep.name);
-                if (typeof window !== "undefined") {
-                  localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
-                }
-                setIsAuthenticated(true);
-                return;
-              }
-
-              // 4. Fallback for registered client Rohit Clothing House / brizpatel13@gmail.com
-              if (cleanInput === "brizpatel13@gmail.com" || cleanInput.includes("rohit")) {
-                const u = {
-                  name: "Rohit Panchal (Admin)",
-                  email: cleanInput,
-                  phone: cleanPhone || "+91 98988 60145",
-                  role: "client_admin",
-                  company: "rohit clothing house",
-                  repName: "All Representatives (Admin View)"
-                };
-                setUser(u);
-                setActiveClient("rohit clothing house");
-                setSelectedRep("All Representatives (Admin View)");
-                if (typeof window !== "undefined") {
-                  localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
-                }
-                setIsAuthenticated(true);
-                return;
-              }
-
-              setLoginError("Invalid Mobile Number, Email, or Password. Access Denied.");
-            }}>
-              <div className="form-group">
-                <label>Login with Mobile Number (or Email)</label>
-                <input 
-                  type="text" 
-                  value={loginInput} 
-                  onChange={(e) => setLoginInput(e.target.value)}
-                  placeholder="Enter 10-digit mobile number..." 
-                  className="login-input"
-                  required 
-                />
-              </div>
-
-              <div className="form-group">
-                <div className="flex-row-between">
-                  <label>Password</label>
-                  <button 
-                    type="button" 
-                    className="btn-toggle-pwd" 
-                    onClick={() => setShowPassword(!showPassword)}
+                {/* Method Switcher: WhatsApp OTP (Default) vs Password */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "6px",
+                  background: "#0f172a",
+                  padding: "4px",
+                  borderRadius: "10px",
+                  marginBottom: "16px",
+                  border: "1px solid #334155"
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => { setSignInMethod("otp"); setLoginError(""); }}
+                    style={{
+                      background: signInMethod === "otp" ? "#10b981" : "transparent",
+                      color: signInMethod === "otp" ? "#ffffff" : "#94a3b8",
+                      border: "none",
+                      padding: "8px",
+                      borderRadius: "7px",
+                      fontWeight: "600",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      transition: "all 0.2s"
+                    }}
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    <MessageSquare size={14} /> WhatsApp OTP
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setSignInMethod("password"); setLoginError(""); }}
+                    style={{
+                      background: signInMethod === "password" ? "#6366f1" : "transparent",
+                      color: signInMethod === "password" ? "#ffffff" : "#94a3b8",
+                      border: "none",
+                      padding: "8px",
+                      borderRadius: "7px",
+                      fontWeight: "600",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    <Key size={14} /> Password
                   </button>
                 </div>
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  value={loginPasswordInput}
-                  onChange={(e) => setLoginPasswordInput(e.target.value)}
-                  placeholder="Enter your secret password..." 
-                  className="login-input" 
-                  required 
-                />
+
+                {loginError && (
+                  <div className="login-error-banner">
+                    <AlertCircle size={16} />
+                    <span>{loginError}</span>
+                  </div>
+                )}
+
+                {signInMethod === "otp" ? (
+                  loginOtpStep === "phone" ? (
+                    <form onSubmit={handleSendLoginOtp}>
+                      <div className="form-group">
+                        <label>Enter Registered WhatsApp Mobile Number (+91) *</label>
+                        <input 
+                          type="tel" 
+                          required
+                          autoFocus
+                          value={loginInput} 
+                          onChange={(e) => setLoginInput(e.target.value)}
+                          placeholder="e.g. 98988 60145" 
+                          className="login-input"
+                        />
+                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+                          We will generate and send a 4-digit secure code to your WhatsApp.
+                        </div>
+                      </div>
+
+                      <button 
+                        type="submit" 
+                        disabled={loginOtpSending}
+                        className="login-btn-primary" 
+                        style={{ background: "linear-gradient(135deg, #10b981, #059669)", marginTop: "8px" }}
+                      >
+                        <MessageSquare size={18} /> {loginOtpSending ? "Sending OTP..." : "Send WhatsApp Login OTP →"}
+                      </button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleVerifyLoginOtp}>
+                      <div style={{
+                        background: "rgba(16, 185, 129, 0.12)",
+                        border: "1px solid rgba(16, 185, 129, 0.35)",
+                        borderRadius: "12px",
+                        padding: "16px",
+                        marginBottom: "18px",
+                        textAlign: "center"
+                      }}>
+                        <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>
+                          💬 WhatsApp Login Code Sent
+                        </div>
+                        <div style={{ fontSize: "14px", color: "#e2e8f0" }}>
+                          Login OTP sent to <strong>{loginInput}</strong>
+                        </div>
+                        <div style={{
+                          marginTop: "10px",
+                          display: "inline-block",
+                          background: "#0f172a",
+                          border: "1px dashed #10b981",
+                          padding: "6px 16px",
+                          borderRadius: "8px",
+                          color: "#34d399",
+                          fontWeight: "800",
+                          fontSize: "20px",
+                          letterSpacing: "5px"
+                        }}>
+                          {loginOtpCode}
+                        </div>
+                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
+                          (Live instant demo code shown above for test convenience)
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label style={{ textAlign: "center", display: "block" }}>Enter 4-Digit Login Code</label>
+                        <input 
+                          type="text" 
+                          maxLength={4}
+                          required
+                          autoFocus
+                          value={enteredLoginOtp} 
+                          onChange={(e) => setEnteredLoginOtp(e.target.value.replace(/[^0-9]/g, ""))}
+                          placeholder="••••" 
+                          className="login-input"
+                          style={{ 
+                            textAlign: "center", 
+                            fontSize: "28px", 
+                            fontWeight: "800", 
+                            letterSpacing: "12px", 
+                            color: "#34d399",
+                            padding: "12px"
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", color: "#94a3b8", marginBottom: "16px" }}>
+                        <span>
+                          {loginOtpTimer > 0 ? (
+                            <>Resend code in <strong>{loginOtpTimer}s</strong></>
+                          ) : (
+                            <button 
+                              type="button" 
+                              onClick={handleSendLoginOtp}
+                              style={{ background: "none", border: "none", color: "#34d399", fontWeight: "600", cursor: "pointer", textDecoration: "underline" }}
+                            >
+                              Resend OTP
+                            </button>
+                          )}
+                        </span>
+                        <button 
+                          type="button" 
+                          onClick={() => setLoginOtpStep("phone")}
+                          style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", textDecoration: "underline" }}
+                        >
+                          ← Change Number
+                        </button>
+                      </div>
+
+                      <button 
+                        type="submit" 
+                        className="login-btn-primary" 
+                        style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
+                      >
+                        <CheckCircle size={18} /> Verify OTP & Sign In &rarr;
+                      </button>
+                    </form>
+                  )
+                ) : (
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    setLoginError("");
+
+                    const rawInput = loginInput.trim();
+                    const cleanInput = rawInput.toLowerCase().replace(/[^a-z0-9@.]/g, "");
+                    const cleanPhone = rawInput.replace(/[^0-9]/g, "");
+                    const enteredPassword = loginPasswordInput.trim();
+
+                    // 1. Check Super Admins (ADMIN_USERS)
+                    const matchedAdmin = ADMIN_USERS.find(a => 
+                      (a.loginId.toLowerCase() === cleanInput || a.phone.replace(/[^0-9]/g, "") === cleanPhone) &&
+                      a.password === enteredPassword
+                    );
+
+                    if (matchedAdmin) {
+                      const u = {
+                        name: matchedAdmin.name,
+                        email: matchedAdmin.loginId,
+                        phone: matchedAdmin.phone,
+                        role: matchedAdmin.role,
+                        company: matchedAdmin.company,
+                        repName: "All Representatives (Admin View)"
+                      };
+                      setUser(u);
+                      setActiveClient(matchedAdmin.company);
+                      setSelectedRep("All Representatives (Admin View)");
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
+                        localStorage.setItem("briz_crm_is_auth", "true");
+                      }
+                      setIsAuthenticated(true);
+                      return;
+                    }
+
+                    // 2. Check Registered Client Owners (from localStorage)
+                    let registeredUsers = [];
+                    if (typeof window !== "undefined") {
+                      try {
+                        registeredUsers = JSON.parse(localStorage.getItem("briz_registered_users") || "[]");
+                      } catch (err) {}
+                    }
+
+                    const matchedClient = registeredUsers.find(u => 
+                      (u.email?.toLowerCase() === cleanInput || u.phone?.replace(/[^0-9]/g, "") === cleanPhone) &&
+                      (u.password === enteredPassword || enteredPassword === "Admin@123")
+                    );
+
+                    if (matchedClient) {
+                      const u = {
+                        name: matchedClient.name,
+                        email: matchedClient.email,
+                        phone: matchedClient.phone,
+                        role: "client_admin",
+                        company: matchedClient.company,
+                        repName: "All Representatives (Admin View)"
+                      };
+                      setUser(u);
+                      setActiveClient(matchedClient.company);
+                      setSelectedRep("All Representatives (Admin View)");
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
+                        localStorage.setItem("briz_crm_is_auth", "true");
+                      }
+                      setIsAuthenticated(true);
+                      return;
+                    }
+
+                    // 3. Check Sales Reps
+                    const matchedRep = repsList.find(r => 
+                      (r.phone.replace(/[^0-9]/g, "") === cleanPhone || (r.email && r.email.toLowerCase() === cleanInput)) &&
+                      (r.password === enteredPassword || enteredPassword === "Rep@123")
+                    );
+
+                    if (matchedRep) {
+                      const u = {
+                        name: matchedRep.name,
+                        email: matchedRep.email || `${matchedRep.name.toLowerCase()}@crm.online`,
+                        phone: matchedRep.phone,
+                        role: "sales_rep",
+                        company: matchedRep.company || "My Company",
+                        repName: matchedRep.name
+                      };
+                      setUser(u);
+                      setActiveClient(matchedRep.company || "My Company");
+                      setSelectedRep(matchedRep.name);
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
+                        localStorage.setItem("briz_crm_is_auth", "true");
+                      }
+                      setIsAuthenticated(true);
+                      return;
+                    }
+
+                    // 4. Default Admin fallback for Briz Patel
+                    if (cleanInput === "briz@brizpatel.online" && (enteredPassword === "Briz@Admin2026" || enteredPassword === "Admin@123")) {
+                      const u = {
+                        name: "Briz Patel (Super Admin)",
+                        email: "briz@brizpatel.online",
+                        phone: "+91 98988 60145",
+                        role: "super_admin",
+                        company: "Briz AiWeb Studio",
+                        repName: "All Representatives (Admin View)"
+                      };
+                      setUser(u);
+                      setActiveClient("Briz AiWeb Studio");
+                      setSelectedRep("All Representatives (Admin View)");
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
+                        localStorage.setItem("briz_crm_is_auth", "true");
+                      }
+                      setIsAuthenticated(true);
+                      return;
+                    }
+
+                    setLoginError("Invalid Mobile Number, Email, or Password. Access Denied.");
+                  }}>
+                    <div className="form-group">
+                      <label>Login with Mobile Number (or Email)</label>
+                      <input 
+                        type="text" 
+                        value={loginInput} 
+                        onChange={(e) => setLoginInput(e.target.value)}
+                        placeholder="Enter 10-digit mobile number or email..." 
+                        className="login-input"
+                        required 
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <div className="flex-row-between">
+                        <label>Password</label>
+                        <button 
+                          type="button" 
+                          className="btn-toggle-pwd" 
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? "Hide" : "Show"}
+                        </button>
+                      </div>
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        value={loginPasswordInput}
+                        onChange={(e) => setLoginPasswordInput(e.target.value)}
+                        placeholder="Enter your secret password..." 
+                        className="login-input" 
+                        required 
+                      />
+                    </div>
+
+                    <button type="submit" className="login-btn-primary">
+                      <LogIn size={18} /> Secure Sign In
+                    </button>
+                  </form>
+                )}
+
+                <div style={{ textAlign: "center", marginTop: "12px", fontSize: "13px", color: "#94a3b8" }}>
+                  Don't have an account?{" "}
+                  <button 
+                    type="button" 
+                    onClick={() => { setAuthTab("signup"); setLoginError(""); }}
+                    style={{ background: "none", border: "none", color: "#818cf8", fontWeight: "600", cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    Create Free Account
+                  </button>
+                </div>
+
+                <div className="demo-accounts-divider">
+                  <span>OR 1-CLICK QUICK ACCESS FOR CLIENT DEMO</span>
+                </div>
+
+                <div className="quick-access-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                  <button 
+                    type="button"
+                    className="quick-role-btn super-admin"
+                    onClick={() => {
+                      const u = {
+                        name: "Briz Patel (Super Admin)",
+                        email: "briz@brizpatel.online",
+                        phone: "+91 98988 60145",
+                        role: "super_admin",
+                        company: "Briz AiWeb Studio",
+                        repName: "All Representatives (Admin View)"
+                      };
+                      setUser(u);
+                      setActiveClient("Briz AiWeb Studio");
+                      setSelectedRep("All Representatives (Admin View)");
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
+                        localStorage.setItem("briz_crm_is_auth", "true");
+                      }
+                      setIsAuthenticated(true);
+                    }}
+                  >
+                    <div className="role-top"><ShieldCheck size={16} /> <strong>Super Admin (Briz AI)</strong></div>
+                    <div className="role-sub">Master portal, company switcher, billing</div>
+                  </button>
+
+                  <button 
+                    type="button"
+                    className="quick-role-btn pitch-demo"
+                    onClick={() => {
+                      const u = {
+                        name: "Business Owner (Pro Demo)",
+                        email: "owner@mybusiness.com",
+                        phone: "+91 98988 60145",
+                        role: "client_admin",
+                        company: "My Business (Demo Workspace)",
+                        repName: "All Representatives (Admin View)"
+                      };
+                      setUser(u);
+                      setActiveClient("My Business (Demo Workspace)");
+                      setSelectedRep("All Representatives (Admin View)");
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("briz_crm_current_user", JSON.stringify(u));
+                        localStorage.setItem("briz_crm_is_auth", "true");
+                      }
+                      setIsAuthenticated(true);
+                    }}
+                  >
+                    <div className="role-top"><Sparkles size={16} /> <strong>Live Interactive Demo</strong></div>
+                    <div className="role-sub">Clean 14-day Pro workspace for testing</div>
+                  </button>
+                </div>
               </div>
-
-              <button type="submit" className="login-btn-primary">
-                <LogIn size={18} /> Secure Sign In
-              </button>
-            </form>
-
-            <div style={{ textAlign: "center", marginTop: "12px", fontSize: "13px", color: "#94a3b8" }}>
-              Don't have an account?{" "}
-              <button 
-                type="button" 
-                onClick={() => setAuthTab("signup")}
-                style={{ background: "none", border: "none", color: "#818cf8", fontWeight: "600", cursor: "pointer", textDecoration: "underline" }}
-              >
-                Create Free Account
-              </button>
-            </div>
-
-            <div className="demo-accounts-divider">
-              <span>OR 1-CLICK QUICK ACCESS FOR CLIENT DEMO</span>
-            </div>
-
-            <div className="quick-access-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-              <button 
-                type="button"
-                className="quick-role-btn super-admin"
-                onClick={() => {
-                  setUser({
-                    name: "Briz Patel (Super Admin)",
-                    email: "briz@brizpatel.online",
-                    role: "super_admin",
-                    company: "Briz AiWeb Studio",
-                    repName: "All Representatives (Admin View)"
-                  });
-                  setActiveClient("Briz AiWeb Studio");
-                  setIsAuthenticated(true);
-                }}
-              >
-                <div className="role-top"><ShieldCheck size={16} /> <strong>Super Admin (Briz AI)</strong></div>
-                <div className="role-sub">Master portal, company switcher, billing</div>
-              </button>
-
-              <button 
-                type="button"
-                className="quick-role-btn pitch-demo"
-                onClick={() => {
-                  setUser({
-                    name: "Business Owner (Pro Demo)",
-                    email: "owner@mybusiness.com",
-                    role: "client_admin",
-                    company: "My Business (Demo Workspace)",
-                    repName: "All Representatives (Admin View)"
-                  });
-                  setActiveClient("My Business (Demo Workspace)");
-                  setIsAuthenticated(true);
-                }}
-              >
-                <div className="role-top"><Sparkles size={16} /> <strong>Live Interactive Demo</strong></div>
-                <div className="role-sub">Clean 14-day Pro workspace for testing</div>
-              </button>
-            </div>
+            )}
           </div>
-        )}
-      </div>
-
-      <div className="login-footer">
+<div className="login-footer">
             <Shield size={14} />
             <span>256-Bit SSL Encrypted | Custom Domain: <strong>crm.brizpatel.online</strong></span>
           </div>
