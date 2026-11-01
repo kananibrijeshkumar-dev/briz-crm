@@ -78,8 +78,8 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onOpenSig
     setCheckoutModalOpen(true);
   };
 
-  const handleSendCheckoutOtp = (e) => {
-    e.preventDefault();
+  const handleSendCheckoutOtp = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     setCheckoutOtpError("");
     if (!checkoutForm.companyName.trim()) {
       setCheckoutOtpError("Please enter your Company or Business Name.");
@@ -95,13 +95,18 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onOpenSig
     setGeneratedCheckoutOtp(code);
     setEnteredCheckoutOtp("");
     setCheckoutOtpTimer(45);
-    setCheckoutOtpStep("verify");
 
-    const targetPhone = cleanDigits.startsWith("91") ? cleanDigits : `91${cleanDigits.slice(-10)}`;
-    const waMsg = encodeURIComponent(`*BrizCRM Verification Code:* ${code}\n\nUse this 4-digit code to activate your 14-day free trial workspace for ${checkoutForm.companyName}.`);
     try {
-      window.open(`https://wa.me/${targetPhone}?text=${waMsg}`, "_blank");
-    } catch (err) {}
+      await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanDigits, code, purpose: "signup" })
+      });
+    } catch (err) {
+      console.warn("Checkout OTP send notice:", err);
+    } finally {
+      setCheckoutOtpStep("verify");
+    }
   };
 
   const handleVerifyCheckoutOtpAndLaunch = (e) => {
@@ -751,34 +756,20 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onOpenSig
             ) : checkoutOtpStep === "verify" ? (
               <form onSubmit={handleVerifyCheckoutOtpAndLaunch} className="checkout-modal-body" style={{ padding: "24px 20px" }}>
                 <div style={{
-                  background: "rgba(16, 185, 129, 0.12)",
-                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                  background: "rgba(16, 185, 129, 0.08)",
+                  border: "1px solid rgba(16, 185, 129, 0.25)",
                   borderRadius: "12px",
                   padding: "18px",
                   textAlign: "center"
                 }}>
-                  <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>
-                    💬 WhatsApp Code Sent
+                  <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px" }}>
+                    💬 Verification Code Sent
                   </div>
                   <div style={{ fontSize: "14px", color: "#e2e8f0" }}>
-                    Verification code sent to <strong>{checkoutForm.whatsapp}</strong>
+                    We have sent a 4-digit code to your WhatsApp: <strong style={{ color: "#34d399" }}>{checkoutForm.whatsapp}</strong>
                   </div>
-                  <div style={{
-                    marginTop: "10px",
-                    display: "inline-block",
-                    background: "#0f172a",
-                    border: "1px dashed #10b981",
-                    padding: "8px 20px",
-                    borderRadius: "8px",
-                    color: "#34d399",
-                    fontWeight: "800",
-                    fontSize: "22px",
-                    letterSpacing: "6px"
-                  }}>
-                    {generatedCheckoutOtp}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
-                    (Live instant demo code shown above for test convenience)
+                  <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "6px" }}>
+                    Please check your incoming WhatsApp message and enter the code below.
                   </div>
                 </div>
 

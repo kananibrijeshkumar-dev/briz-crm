@@ -585,8 +585,8 @@ export default function App() {
     return () => clearInterval(interval);
   }, [loginOtpStep, loginOtpTimer]);
 
-  // Generate & Send WhatsApp OTP for Login
-  const handleSendLoginOtp = (e) => {
+  // Generate & Send WhatsApp OTP for Login (Direct Background Delivery via Meta API)
+  const handleSendLoginOtp = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setLoginError("");
     const cleanDigits = (loginInput || "").replace(/[^0-9]/g, "");
@@ -601,15 +601,18 @@ export default function App() {
     setEnteredLoginOtp("");
     setLoginOtpTimer(45);
 
-    setTimeout(() => {
+    try {
+      await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanDigits, code: newOtp, purpose: "login" })
+      });
+    } catch (err) {
+      console.warn("Background OTP send notice:", err);
+    } finally {
       setLoginOtpSending(false);
       setLoginOtpStep("verify");
-      const targetPhone = cleanDigits.startsWith("91") ? cleanDigits : `91${cleanDigits.slice(-10)}`;
-      const waMsg = encodeURIComponent(`*BrizCRM Login Code:* ${newOtp}\n\nUse this 4-digit OTP to log into your CRM workstation. Valid for 5 minutes.`);
-      try {
-        window.open(`https://wa.me/${targetPhone}?text=${waMsg}`, "_blank");
-      } catch (err) {}
-    }, 500);
+    }
   };
 
   // Verify Login OTP and Sign In
@@ -733,9 +736,9 @@ export default function App() {
     confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
   };
 
-  // Generate & Send WhatsApp OTP
-  const handleSendWhatsAppOtp = (e) => {
-    e.preventDefault();
+  // Generate & Send WhatsApp OTP for Sign Up (Direct Background Delivery via Meta API)
+  const handleSendWhatsAppOtp = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     setLoginError("");
     if (!signUpForm.companyName.trim()) {
       setLoginError("Please enter your Company or Business Name.");
@@ -753,16 +756,18 @@ export default function App() {
     setEnteredOtp("");
     setOtpTimer(45);
 
-    setTimeout(() => {
+    try {
+      await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanDigits, code: newOtp, purpose: "signup" })
+      });
+    } catch (err) {
+      console.warn("Background OTP send notice:", err);
+    } finally {
       setOtpSending(false);
       setOtpStep("verify");
-      // Open WhatsApp direct message link if popup allowed
-      const targetPhone = cleanDigits.startsWith("91") ? cleanDigits : `91${cleanDigits.slice(-10)}`;
-      const waMsg = encodeURIComponent(`*BrizCRM Verification Code:* ${newOtp}\n\nUse this 4-digit OTP to activate your 14-day free workspace for ${signUpForm.companyName}. Valid for 5 minutes.`);
-      try {
-        window.open(`https://wa.me/${targetPhone}?text=${waMsg}`, "_blank");
-      } catch (err) {}
-    }, 600);
+    }
   };
 
   // Verify OTP and complete signup
@@ -1104,35 +1109,21 @@ export default function App() {
                 ) : (
                   <form onSubmit={handleVerifyOtpAndSubmit}>
                     <div style={{
-                      background: "rgba(16, 185, 129, 0.12)",
-                      border: "1px solid rgba(16, 185, 129, 0.35)",
+                      background: "rgba(16, 185, 129, 0.08)",
+                      border: "1px solid rgba(16, 185, 129, 0.25)",
                       borderRadius: "12px",
                       padding: "16px",
-                      marginBottom: "18px",
+                      marginBottom: "20px",
                       textAlign: "center"
                     }}>
-                      <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>
-                        💬 WhatsApp Code Sent
+                      <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px" }}>
+                        💬 Verification Code Sent
                       </div>
                       <div style={{ fontSize: "14px", color: "#e2e8f0" }}>
-                        Verification code sent to <strong>{signUpForm.whatsapp}</strong>
+                        We have sent a 4-digit verification code to your WhatsApp: <strong style={{ color: "#34d399" }}>{signUpForm.whatsapp}</strong>
                       </div>
-                      <div style={{
-                        marginTop: "10px",
-                        display: "inline-block",
-                        background: "#0f172a",
-                        border: "1px dashed #10b981",
-                        padding: "6px 16px",
-                        borderRadius: "8px",
-                        color: "#34d399",
-                        fontWeight: "800",
-                        fontSize: "20px",
-                        letterSpacing: "5px"
-                      }}>
-                        {generatedOtp}
-                      </div>
-                      <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
-                        (Live code preview provided for immediate testing)
+                      <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "6px" }}>
+                        Please check your WhatsApp incoming messages and enter the code below.
                       </div>
                     </div>
 
@@ -1289,35 +1280,21 @@ export default function App() {
                   ) : (
                     <form onSubmit={handleVerifyLoginOtp}>
                       <div style={{
-                        background: "rgba(16, 185, 129, 0.12)",
-                        border: "1px solid rgba(16, 185, 129, 0.35)",
+                        background: "rgba(16, 185, 129, 0.08)",
+                        border: "1px solid rgba(16, 185, 129, 0.25)",
                         borderRadius: "12px",
                         padding: "16px",
-                        marginBottom: "18px",
+                        marginBottom: "20px",
                         textAlign: "center"
                       }}>
-                        <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>
-                          💬 WhatsApp Login Code Sent
+                        <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px" }}>
+                          💬 Security Code Sent
                         </div>
                         <div style={{ fontSize: "14px", color: "#e2e8f0" }}>
-                          Login OTP sent to <strong>{loginInput}</strong>
+                          We have sent a 4-digit code to your WhatsApp: <strong style={{ color: "#34d399" }}>{loginInput}</strong>
                         </div>
-                        <div style={{
-                          marginTop: "10px",
-                          display: "inline-block",
-                          background: "#0f172a",
-                          border: "1px dashed #10b981",
-                          padding: "6px 16px",
-                          borderRadius: "8px",
-                          color: "#34d399",
-                          fontWeight: "800",
-                          fontSize: "20px",
-                          letterSpacing: "5px"
-                        }}>
-                          {loginOtpCode}
-                        </div>
-                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
-                          (Live instant demo code shown above for test convenience)
+                        <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "6px" }}>
+                          Please check your WhatsApp incoming messages and enter the code below.
                         </div>
                       </div>
 
