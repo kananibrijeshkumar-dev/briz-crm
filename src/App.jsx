@@ -1,3 +1,4 @@
+import { sendWhatsAppOtpDirectly } from "./whatsappOtp";
 import LandingPage from "./LandingPage";
 import React, { useState, useEffect } from "react";
 import { 
@@ -602,11 +603,7 @@ export default function App() {
     setLoginOtpTimer(45);
 
     try {
-      await fetch("/api/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleanDigits, code: newOtp, purpose: "login" })
-      });
+      await sendWhatsAppOtpDirectly(cleanDigits, newOtp, "login");
     } catch (err) {
       console.warn("Background OTP send notice:", err);
     } finally {
@@ -757,11 +754,7 @@ export default function App() {
     setOtpTimer(45);
 
     try {
-      await fetch("/api/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleanDigits, code: newOtp, purpose: "signup" })
-      });
+      await sendWhatsAppOtpDirectly(cleanDigits, newOtp, "signup");
     } catch (err) {
       console.warn("Background OTP send notice:", err);
     } finally {

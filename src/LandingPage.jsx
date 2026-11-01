@@ -1,3 +1,4 @@
+import { sendWhatsAppOtpDirectly } from "./whatsappOtp";
 import React, { useState, useEffect } from "react";
 import { 
   Zap, AlertCircle, Check, ArrowRight, Shield, MessageSquare, Clock, 
@@ -97,11 +98,7 @@ export default function LandingPage({ onEnterWorkstation, onOpenLogin, onOpenSig
     setCheckoutOtpTimer(45);
 
     try {
-      await fetch("/api/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleanDigits, code, purpose: "signup" })
-      });
+      await sendWhatsAppOtpDirectly(cleanDigits, code, "signup");
     } catch (err) {
       console.warn("Checkout OTP send notice:", err);
     } finally {
